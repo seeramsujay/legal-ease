@@ -1,24 +1,27 @@
 """
-Side-by-side contract comparison and liability shift analyzer.
-Aligns clauses between contract revisions and highlights modified terms and risk shifts.
+Contract diffing and version comparison engine.
+Calculates liability deltas, identifies stealth clause alterations,
+and computes overall contractual trajectory (SAFER / MORE_RISK / NEUTRAL).
+Accelerated by native Cython C-extensions when available.
 """
 
-import difflib
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
+from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
+from legal_ease.risk_analyzer import RiskAnalyzer
+from legal_ease.fast_ops_bridge import compute_similarity, is_cython_accelerated
+from legal_ease.guardrails import get_standard_disclaimer
 from legal_ease.models import (
     ContractComparisonResponse,
     ClauseDiff,
     DiffChangeType,
 )
-from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
-from legal_ease.risk_analyzer import RiskAnalyzer
-from legal_ease.guardrails import get_standard_disclaimer
 
 
 class ContractComparator:
     """
-    Compares two contract versions (e.g. Original vs Counter-Proposal),
-    identifying added, deleted, or modified obligations and scoring risk divergence.
+    Compares two contracts (e.g., Original vs Counter-Proposal),
+    aligning clauses by semantic similarity, identifying additions,
+    deletions, and modifications, and scoring risk delta.
     """
 
     def __init__(self):
@@ -27,16 +30,19 @@ class ContractComparator:
 
     def compare(
         self,
-        doc_v1_text: str,
-        doc_v2_text: str,
+        text_v1: Optional[str] = None,
+        text_v2: Optional[str] = None,
         title_v1: str = "Original Version",
         title_v2: str = "Revised Proposal",
+        doc_v1_text: Optional[str] = None,
+        doc_v2_text: Optional[str] = None,
     ) -> ContractComparisonResponse:
-        """
-        Segment both versions, align clauses by title/category, and compute diffs and risk deltas.
-        """
-        clauses_v1 = self.segmenter.segment(doc_v1_text)
-        clauses_v2 = self.segmenter.segment(doc_v2_text)
+        """Execute full comparison and trajectory analysis between two drafts."""
+        v1 = text_v1 if text_v1 is not None else (doc_v1_text or "")
+        v2 = text_v2 if text_v2 is not None else (doc_v2_text or "")
+
+        clauses_v1 = self.segmenter.segment(v1)
+        clauses_v2 = self.segmenter.segment(v2)
 
         evals_v1 = [self.analyzer.evaluate_clause(c) for c in clauses_v1]
         evals_v2 = [self.analyzer.evaluate_clause(c) for c in clauses_v2]
@@ -45,71 +51,75 @@ class ContractComparator:
         overview_v2 = self.analyzer.calculate_overview(evals_v2)
 
         risk_delta = overview_v2.legal_risk_index - overview_v1.legal_risk_index
-        if risk_delta > 5:
-            trajectory = "MORE_RISK"
-        elif risk_delta < -5:
+
+        if risk_delta <= -8:
             trajectory = "SAFER"
+        elif risk_delta >= 8:
+            trajectory = "MORE_RISK"
         else:
             trajectory = "NEUTRAL"
 
-        # Align clauses
         clause_diffs: List[ClauseDiff] = []
+        matched_v2_indices = set()
         summary_of_changes: List[str] = []
 
-        # Map by normalized title/category
-        v1_dict: Dict[str, Tuple[RawClause, int]] = {
-            self._key(c): (c, evals_v1[i].risk_score) for i, c in enumerate(clauses_v1)
-        }
-        v2_dict: Dict[str, Tuple[RawClause, int]] = {
-            self._key(c): (c, evals_v2[i].risk_score) for i, c in enumerate(clauses_v2)
-        }
+        for i, c1 in enumerate(clauses_v1):
+            e1 = evals_v1[i]
+            # Find best match in v2
+            best_match_idx = None
+            best_sim = 0.0
 
-        matched_v2_keys = set()
+            for j, c2 in enumerate(clauses_v2):
+                if j in matched_v2_indices:
+                    continue
+                # Calculate similarity via accelerated Cython engine
+                sim = self._text_similarity(c1.text, c2.text)
+                if c1.category == c2.category:
+                    sim += 0.25
+                if sim > best_sim and sim >= 0.40:
+                    best_sim = sim
+                    best_match_idx = j
 
-        # Check all clauses from v1
-        for k, (c1, score1) in v1_dict.items():
-            if k in v2_dict:
-                c2, score2 = v2_dict[k]
-                matched_v2_keys.add(k)
-                delta = score2 - score1
+            if best_match_idx is not None:
+                matched_v2_indices.add(best_match_idx)
+                c2 = clauses_v2[best_match_idx]
+                e2 = evals_v2[best_match_idx]
+                c_delta = e2.risk_score - e1.risk_score
 
-                # Check text similarity
-                similarity = difflib.SequenceMatcher(None, c1.text, c2.text).ratio()
-
-                if similarity > 0.98:
+                if c1.text.strip() == c2.text.strip():
                     change_type = DiffChangeType.UNCHANGED
-                    notes = "Clause text is substantially identical."
+                    notes = "Clause terms remain identical between versions."
                 else:
                     change_type = DiffChangeType.MODIFIED
-                    if delta > 10:
-                        notes = f"Significantly altered (+{delta} risk pts): Increased burden or liability exposure."
-                        summary_of_changes.append(
-                            f"Section '{c2.title}': Language modified, increasing risk from {score1} to {score2}."
-                        )
-                    elif delta < -10:
-                        notes = f"Favorable modification ({delta} risk pts): Improved protections or reduced exposure."
-                        summary_of_changes.append(
-                            f"Section '{c2.title}': Language improved, lowering risk from {score1} to {score2}."
-                        )
+                    if c_delta < 0:
+                        notes = f"Favorable modification: Risk decreased by {abs(c_delta)} points."
+                    elif c_delta > 0:
+                        notes = f"Unfavorable modification: Risk increased by {c_delta} points."
                     else:
-                        notes = "Clause language tweaked with minor risk impact."
+                        notes = "Wording adjusted with neutral risk impact."
+
+                    summary_of_changes.append(
+                        f"Modified '{c1.title}': {notes}"
+                    )
 
                 clause_diffs.append(
                     ClauseDiff(
-                        section_title=c2.title,
-                        category=c2.category.value,
+                        section_title=c1.title,
+                        category=c1.category.value,
                         change_type=change_type,
                         text_v1=c1.text,
                         text_v2=c2.text,
-                        risk_score_v1=score1,
-                        risk_score_v2=score2,
-                        risk_delta=delta,
+                        risk_score_v1=e1.risk_score,
+                        risk_score_v2=e2.risk_score,
+                        risk_delta=c_delta,
                         analysis_notes=notes,
                     )
                 )
             else:
-                # Removed from v2
-                summary_of_changes.append(f"Section '{c1.title}' was REMOVED in the revised draft.")
+                # Clause in v1 was removed in v2
+                summary_of_changes.append(
+                    f"Removed '{c1.title}' (was {e1.risk_score} risk points in v1)."
+                )
                 clause_diffs.append(
                     ClauseDiff(
                         section_title=c1.title,
@@ -117,18 +127,19 @@ class ContractComparator:
                         change_type=DiffChangeType.REMOVED,
                         text_v1=c1.text,
                         text_v2=None,
-                        risk_score_v1=score1,
+                        risk_score_v1=e1.risk_score,
                         risk_score_v2=None,
-                        risk_delta=-score1,
-                        analysis_notes="Clause was omitted from the revised agreement.",
+                        risk_delta=-e1.risk_score,
+                        analysis_notes="Clause was deleted from the revised version.",
                     )
                 )
 
-        # Check clauses newly added in v2
-        for k, (c2, score2) in v2_dict.items():
-            if k not in matched_v2_keys:
+        # Catch newly added clauses in v2
+        for j, c2 in enumerate(clauses_v2):
+            if j not in matched_v2_indices:
+                e2 = evals_v2[j]
                 summary_of_changes.append(
-                    f"Section '{c2.title}' was ADDED in the revised draft (Risk score: {score2})."
+                    f"Added new clause '{c2.title}' with risk score of {e2.risk_score}/100."
                 )
                 clause_diffs.append(
                     ClauseDiff(
@@ -138,14 +149,14 @@ class ContractComparator:
                         text_v1=None,
                         text_v2=c2.text,
                         risk_score_v1=None,
-                        risk_score_v2=score2,
-                        risk_delta=score2,
-                        analysis_notes=f"New provision inserted with risk score {score2}.",
+                        risk_score_v2=e2.risk_score,
+                        risk_delta=e2.risk_score,
+                        analysis_notes="New clause introduced in the revised version.",
                     )
                 )
 
         if not summary_of_changes:
-            summary_of_changes.append("No significant structural or risk changes detected between versions.")
+            summary_of_changes.append("No significant structural or textual alterations detected.")
 
         return ContractComparisonResponse(
             document_title_v1=title_v1,
@@ -159,8 +170,6 @@ class ContractComparator:
             clause_diffs=clause_diffs,
         )
 
-    def _key(self, clause: RawClause) -> str:
-        """Create a normalized key for matching clauses between revisions."""
-        norm_title = "".join(c for c in clause.title.lower() if c.isalnum() or c.isspace())
-        tokens = [t for t in norm_title.split() if not t.isdigit() and len(t) > 2]
-        return f"{clause.category.value}_{'_'.join(tokens[:3])}"
+    def _text_similarity(self, a: str, b: str) -> float:
+        """High-performance Jaccard similarity via Cython or Python fallback."""
+        return compute_similarity(a, b)

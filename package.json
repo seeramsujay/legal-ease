@@ -1,20 +1,23 @@
 {
   "name": "legal-ease",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Privacy-First AI Legal Navigator & Contract Risk Analyzer",
   "scripts": {
     "start": "uv run legal-ease serve",
     "dev": "uv run uvicorn legal_ease.main:app --reload",
     "test": "uv run python -m pytest tests -v",
-    "cli": "uv run legal-ease"
+    "cli": "uv run legal-ease",
+    "build:cython": "uv run python setup.py build_ext --inplace"
   },
   "keywords": [
     "legal-ai",
     "contract-risk-analyzer",
     "pii-redaction",
     "fastapi",
-    "privacy-first"
+    "privacy-first",
+    "cython",
+    "nemotron"
   ],
   "author": "seeramsujay",
   "license": "MIT"

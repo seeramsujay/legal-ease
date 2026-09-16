@@ -1,7 +1,7 @@
 """
 FastAPI application entry point for Legal-Ease.
 Provides REST API endpoints, Nemotron LLM escalation management,
-and serves the modern, accessible web dashboard.
+native Cython compilation telemetry, and serves the modern, accessible web dashboard.
 """
 
 from typing import Optional, List, Dict, Any
@@ -15,6 +15,7 @@ from legal_ease.pipeline import LegalAnalysisPipeline
 from legal_ease.comparator import ContractComparator
 from legal_ease.anonymizer import PIIAnonymizer
 from legal_ease.assistant import LegalAssistant
+from legal_ease.fast_ops_bridge import is_cython_accelerated, get_acceleration_info
 from legal_ease.sample_contracts import get_all_samples
 from legal_ease.guardrails import get_standard_disclaimer
 from legal_ease.models import (
@@ -28,8 +29,8 @@ from legal_ease.models import (
 
 app = FastAPI(
     title="Legal-Ease API",
-    description="Privacy-First AI Legal Navigator & Contract Risk Analyzer (Powered by Local Shield + Nemotron)",
-    version="1.1.0",
+    description="Privacy-First AI Legal Navigator & Contract Risk Analyzer (Powered by Local Shield + Nemotron + Cython)",
+    version="1.2.0",
 )
 
 app.add_middleware(
@@ -77,10 +78,12 @@ async def health():
     return {
         "status": "healthy",
         "service": "legal-ease",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "vertical": "AI for Legal Assistance & Access",
         "nemotron_configured": llm_client.is_configured(),
         "model": llm_client.config.model_name,
+        "cython_accelerated": is_cython_accelerated(),
+        "acceleration_info": get_acceleration_info(),
     }
 
 
@@ -98,6 +101,7 @@ async def get_llm_settings():
         "model_name": llm_client.config.model_name,
         "enabled": llm_client.config.enabled,
         "confidence_threshold": llm_client.config.confidence_threshold,
+        "cython_active": is_cython_accelerated(),
     }
 
 
