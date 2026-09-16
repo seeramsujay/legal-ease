@@ -1,0 +1,29 @@
+[project]
+name = "legal-ease"
+version = "1.0.0"
+description = "Privacy-First Legal AI Navigator & Contract Risk Analyzer"
+authors = [
+    { name = "seeramsujay", email = "sujayat2007@gmail.com" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "pydantic>=2.10.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "python-multipart>=0.0.18",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.scripts]
+legal-ease = "legal_ease.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
