@@ -1,14 +1,16 @@
 """
 FastAPI application entry point for Legal-Ease.
-Provides REST API endpoints and serves the modern, accessible web dashboard.
+Provides REST API endpoints, Nemotron LLM escalation management,
+and serves the modern, accessible web dashboard.
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
+from legal_ease.llm_client import NemotronClient, LLMConfig
 from legal_ease.pipeline import LegalAnalysisPipeline
 from legal_ease.comparator import ContractComparator
 from legal_ease.anonymizer import PIIAnonymizer
@@ -26,8 +28,8 @@ from legal_ease.models import (
 
 app = FastAPI(
     title="Legal-Ease API",
-    description="Privacy-First AI Legal Navigator & Contract Risk Analyzer",
-    version="1.0.0",
+    description="Privacy-First AI Legal Navigator & Contract Risk Analyzer (Powered by Local Shield + Nemotron)",
+    version="1.1.0",
 )
 
 app.add_middleware(
@@ -38,10 +40,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-pipeline = LegalAnalysisPipeline()
+# Global shared client instances
+llm_client = NemotronClient()
+pipeline = LegalAnalysisPipeline(llm_client=llm_client)
 comparator = ContractComparator()
 anonymizer = PIIAnonymizer()
-assistant = LegalAssistant()
+assistant = LegalAssistant(llm_client=llm_client)
 
 
 class AnalyzeRequest(BaseModel):
@@ -60,14 +64,61 @@ class AnonymizeRequest(BaseModel):
     text: str
 
 
+class UpdateLLMConfigRequest(BaseModel):
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model_name: Optional[str] = None
+    enabled: Optional[bool] = None
+    confidence_threshold: Optional[float] = None
+
+
 @app.get("/api/health")
 async def health():
     return {
         "status": "healthy",
         "service": "legal-ease",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "vertical": "AI for Legal Assistance & Access",
+        "nemotron_configured": llm_client.is_configured(),
+        "model": llm_client.config.model_name,
     }
+
+
+@app.get("/api/settings/llm")
+async def get_llm_settings():
+    """Retrieve current LLM configuration with masked API key."""
+    masked_key = None
+    if llm_client.config.api_key:
+        k = llm_client.config.api_key
+        masked_key = f"{k[:4]}...{k[-4:]}" if len(k) > 8 else "***"
+    return {
+        "api_key_configured": bool(llm_client.config.api_key),
+        "masked_api_key": masked_key,
+        "base_url": llm_client.config.base_url,
+        "model_name": llm_client.config.model_name,
+        "enabled": llm_client.config.enabled,
+        "confidence_threshold": llm_client.config.confidence_threshold,
+    }
+
+
+@app.post("/api/settings/llm")
+async def update_llm_settings(req: UpdateLLMConfigRequest):
+    """Update OpenAI-compatible / Nemotron configuration at runtime."""
+    llm_client.update_config(
+        api_key=req.api_key,
+        base_url=req.base_url,
+        model_name=req.model_name,
+        enabled=req.enabled,
+        confidence_threshold=req.confidence_threshold,
+    )
+    return {"status": "updated", "configured": llm_client.is_configured()}
+
+
+@app.post("/api/settings/test")
+async def test_llm_connection():
+    """Test connection to Nemotron / OpenAI-compatible endpoint."""
+    res = await llm_client.test_connection()
+    return res
 
 
 @app.get("/api/samples", response_model=List[SampleContract])
@@ -78,10 +129,10 @@ async def get_samples():
 
 @app.post("/api/analyze", response_model=ContractAnalysisResponse)
 async def analyze_contract(request: AnalyzeRequest):
-    """Analyze contract text, redact PII, score risks, and generate attorney brief."""
+    """Analyze contract text with local privacy shield and confidence-based Nemotron escalation."""
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Contract text cannot be empty.")
-    return pipeline.analyze(request.text, document_title=request.title)
+    return await pipeline.analyze_async(request.text, document_title=request.title)
 
 
 @app.post("/api/analyze-file", response_model=ContractAnalysisResponse)
@@ -97,7 +148,7 @@ async def analyze_file(
         raise HTTPException(status_code=400, detail=f"Failed to read file: {e}")
 
     doc_title = title if title else file.filename
-    return pipeline.analyze(text, document_title=doc_title)
+    return await pipeline.analyze_async(text, document_title=doc_title)
 
 
 @app.post("/api/compare", response_model=ContractComparisonResponse)
@@ -123,11 +174,12 @@ async def anonymize_text(request: AnonymizeRequest):
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_contract(request: ChatRequest):
-    """Context-aware conversational assistance regarding the contract."""
-    return assistant.answer_query(
+    """Context-aware conversational assistance regarding the contract (Local or Nemotron)."""
+    return await assistant.answer_query_async(
         query=request.message,
-        contract_text=request.contract_text,
+        contract_text=request.contract_text or "",
         clauses_context=request.context_clauses,
+        history=request.history,
     )
 
 

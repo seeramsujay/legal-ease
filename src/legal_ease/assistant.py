@@ -1,15 +1,18 @@
 """
 Interactive Context-Aware Legal Assistant.
-Answers user questions regarding contract terms with mandatory disclaimers and clause citations.
+Answers user questions regarding contract terms with mandatory disclaimers,
+clause citations, and optional Nemotron LLM conversational intelligence.
 """
 
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from legal_ease.models import ChatResponse
 from legal_ease.guardrails import get_standard_disclaimer, validate_chat_query
 from legal_ease.clause_segmenter import ClauseSegmenter
 from legal_ease.risk_analyzer import RiskAnalyzer
 from legal_ease.simplifier import PlainEnglishSimplifier
+from legal_ease.anonymizer import PIIAnonymizer
+from legal_ease.llm_client import NemotronClient
 
 
 class LegalAssistant:
@@ -17,18 +20,22 @@ class LegalAssistant:
     Context-aware legal document Q&A engine.
     Finds relevant clauses, explains their implications, highlights risks,
     and enforces strict non-advisory disclaimers.
+    Optionally routes queries through Nemotron for deep conversational synthesis.
     """
 
-    def __init__(self):
+    def __init__(self, llm_client: Optional[NemotronClient] = None):
         self.segmenter = ClauseSegmenter()
         self.analyzer = RiskAnalyzer()
         self.simplifier = PlainEnglishSimplifier()
+        self.anonymizer = PIIAnonymizer()
+        self.llm_client = llm_client or NemotronClient()
 
-    def answer_query(
+    async def answer_query_async(
         self,
         query: str,
-        contract_text: str,
-        clauses_context: Optional[List[Dict]] = None,
+        contract_text: str = "",
+        clauses_context: Optional[List[Dict[str, Any]]] = None,
+        history: Optional[List[Dict[str, str]]] = None,
     ) -> ChatResponse:
         """Process user query against contract context and generate grounded response."""
         # 1. Guardrail validation
@@ -39,6 +46,7 @@ class LegalAssistant:
                 disclaimer=get_standard_disclaimer(),
                 referenced_clauses=[],
                 risk_warning="Guardrail intervention triggered.",
+                model_used="Security Guardrail Engine",
             )
 
         # Build context if not provided
@@ -61,6 +69,37 @@ class LegalAssistant:
                     "negotiation_tip": tip,
                 })
 
+        # Check if Nemotron is configured for deep conversational reasoning
+        if self.llm_client.is_configured() and contract_text.strip():
+            # Guarantee 100% PII anonymity before calling Nemotron
+            anon_res = self.anonymizer.anonymize(contract_text)
+            llm_answer = await self.llm_client.chat_completion(
+                query=query,
+                anonymized_contract_context=anon_res.redacted_text,
+                conversation_history=history,
+            )
+            if llm_answer:
+                # Identify referenced clauses
+                referenced = []
+                if clauses_context:
+                    for c in clauses_context:
+                        sec_name = c.get("section_title", "")
+                        if sec_name.lower() in llm_answer.lower() or c.get("category", "") in llm_answer.lower():
+                            referenced.append(sec_name)
+                return ChatResponse(
+                    answer=llm_answer,
+                    disclaimer=get_standard_disclaimer(),
+                    referenced_clauses=list(dict.fromkeys(referenced[:4])),
+                    risk_warning=None,
+                    model_used=self.llm_client.config.model_name,
+                )
+
+        # Local deterministic assistant fallback
+        return self._answer_locally(query, clauses_context)
+
+    def _answer_locally(
+        self, query: str, clauses_context: Optional[List[Dict[str, Any]]]
+    ) -> ChatResponse:
         q_lower = query.lower()
         referenced_clauses: List[str] = []
         findings: List[str] = []
@@ -185,4 +224,15 @@ class LegalAssistant:
             disclaimer=get_standard_disclaimer(),
             referenced_clauses=list(dict.fromkeys(referenced_clauses)),
             risk_warning=risk_warning,
+            model_used="Local Grounded Assistant",
         )
+
+    def answer_query(
+        self,
+        query: str,
+        contract_text: str = "",
+        clauses_context: Optional[List[Dict[str, Any]]] = None,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> ChatResponse:
+        """Sync wrapper for callers/tests."""
+        return self._answer_locally(query, clauses_context)

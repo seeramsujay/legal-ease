@@ -17,6 +17,37 @@ def test_health_endpoint():
     assert data["vertical"] == "AI for Legal Assistance & Access"
 
 
+def test_settings_llm_endpoints():
+    # 1. Get current settings
+    res = client.get("/api/settings/llm")
+    assert res.status_code == 200
+    data = res.json()
+    assert "base_url" in data
+    assert "model_name" in data
+
+    # 2. Update settings
+    res = client.post(
+        "/api/settings/llm",
+        json={
+            "api_key": "nvapi-test-dummy-key-12345678",
+            "base_url": "https://integrate.api.nvidia.com/v1",
+            "model_name": "nvidia/llama-3.1-nemotron-70b-instruct",
+            "confidence_threshold": 0.80,
+            "enabled": True,
+        },
+    )
+    assert res.status_code == 200
+    assert res.json()["status"] == "updated"
+
+    # 3. Verify updated config with masked key
+    res = client.get("/api/settings/llm")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["api_key_configured"] is True
+    assert "nvap...5678" in data["masked_api_key"]
+    assert data["confidence_threshold"] == 0.80
+
+
 def test_samples_endpoint():
     res = client.get("/api/samples")
     assert res.status_code == 200
@@ -41,6 +72,9 @@ def test_analyze_endpoint():
     # Verify PII was redacted
     assert len(data["anonymization"]["entities"]) > 0
     assert "attorney_checklist" in data
+    # Verify confidence fields exist
+    assert "confidence" in data["clauses"][0]
+    assert "analysis_source" in data["clauses"][0]
 
 
 def test_compare_endpoint():
@@ -104,3 +138,4 @@ def test_ui_served():
     assert "text/html" in res.headers["content-type"]
     assert "Legal-Ease" in res.text
     assert "Contract Risk Analyzer" in res.text
+    assert "Nemotron" in res.text

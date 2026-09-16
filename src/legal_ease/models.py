@@ -1,9 +1,9 @@
 """
-Data models and schemas for Legal-Ease.
+Data models, schemas, and enums for Legal-Ease.
 """
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Dict, Optional, Any
 from pydantic import BaseModel, Field
 
 
@@ -20,30 +20,27 @@ class ClauseCategory(str, Enum):
     DISPUTE_RESOLUTION = "dispute_resolution"
     TERMINATION = "termination"
     INTELLECTUAL_PROPERTY = "intellectual_property"
-    RESTRICTIVE_COVENANTS = "restrictive_covenants"
     CONFIDENTIALITY = "confidentiality"
     PAYMENT_TERMS = "payment_terms"
+    RESTRICTIVE_COVENANTS = "restrictive_covenants"
     WARRANTY_DISCLAIMER = "warranty_disclaimer"
     GOVERNING_LAW = "governing_law"
     GENERAL_BOILERPLATE = "general_boilerplate"
 
 
 class RedactedEntity(BaseModel):
-    token: str
-    original_value: str
-    entity_type: str
+    entity_type: str = Field(description="Category of PII/sensitive info (e.g. EMAIL, PHONE, SSN, MONEY, PARTY_NAME)")
+    original_value: str = Field(description="Original unredacted sensitive value")
+    token: str = Field(description="Pseudonym token replacement, e.g. [EMAIL_1], [CONFIDENTIAL_AMOUNT_1]")
     start_char: int
     end_char: int
 
 
 class AnonymizationResult(BaseModel):
-    original_text_length: int
     redacted_text: str
     entities: List[RedactedEntity]
-    entity_counts: Dict[str, int]
-    privacy_score: float = Field(
-        ..., description="Score 0-100 indicating privacy protection level"
-    )
+    privacy_score: float = Field(description="Estimated privacy coverage score (0.0 to 100.0)")
+    entity_counts: Dict[str, int] = Field(default_factory=dict)
 
 
 class ClauseAnalysis(BaseModel):
@@ -52,19 +49,21 @@ class ClauseAnalysis(BaseModel):
     category: ClauseCategory
     original_text: str
     redacted_text: str
-    risk_score: int = Field(..., ge=0, le=100, description="Risk score 0-100")
+    risk_score: int = Field(ge=0, le=100, description="Liability exposure score from 0 (benign) to 100 (extreme)")
     severity: RiskSeverity
-    risk_reasons: List[str]
-    plain_english_summary: str
-    what_it_means_for_you: str
-    negotiation_tip: str
-    detected_traps: List[str]
+    confidence: float = Field(default=0.95, ge=0.0, le=1.0, description="Confidence in the local assessment")
+    confidence_label: str = Field(default="HIGH", description="Confidence level: HIGH, MEDIUM, LOW")
+    analysis_source: str = Field(default="LOCAL_HEURISTICS", description="LOCAL_HEURISTICS or NEMOTRON_DEEP_REASONING")
+    escalation_reason: Optional[str] = Field(default=None, description="Reason if escalated to LLM")
+    risk_reasons: List[str] = Field(default_factory=list)
+    plain_english_summary: str = Field(description="Plain-English explanation without legalese")
+    what_it_means_for_you: str = Field(description="Real-world practical business and personal consequences")
+    negotiation_tip: str = Field(description="Actionable redline suggestion to propose to counterparty")
+    detected_traps: List[str] = Field(default_factory=list)
 
 
 class RiskOverview(BaseModel):
-    legal_risk_index: int = Field(
-        ..., ge=0, le=100, description="Overall contract risk index (0=Safe, 100=Dangerous)"
-    )
+    legal_risk_index: int = Field(ge=0, le=100, description="Overall contract hazard score")
     risk_level: RiskSeverity
     total_clauses: int
     high_risk_count: int
@@ -72,11 +71,13 @@ class RiskOverview(BaseModel):
     low_risk_count: int
     critical_findings: List[str]
     executive_summary: str
+    average_confidence: float = Field(default=0.92, ge=0.0, le=1.0)
+    escalated_clauses_count: int = Field(default=0)
+    ai_model_used: Optional[str] = Field(default="Local Rules + Deterministic Heuristics")
 
 
 class AttorneyQuestion(BaseModel):
     category: str
-    related_clause_id: Optional[int]
     question: str
     why_it_matters: str
     recommended_fallback: str
@@ -85,20 +86,9 @@ class AttorneyQuestion(BaseModel):
 class AttorneyChecklist(BaseModel):
     document_title: str
     overall_risk_index: int
-    top_exposures: List[str]
     questions_for_counsel: List[AttorneyQuestion]
     priority_negotiation_items: List[str]
     markdown_report: str
-
-
-class ContractAnalysisResponse(BaseModel):
-    document_id: str
-    disclaimer: str
-    anonymization: AnonymizationResult
-    risk_overview: RiskOverview
-    clauses: List[ClauseAnalysis]
-    attorney_checklist: AttorneyChecklist
-    analyzed_at: str
 
 
 class DiffChangeType(str, Enum):
@@ -116,7 +106,7 @@ class ClauseDiff(BaseModel):
     text_v2: Optional[str] = None
     risk_score_v1: Optional[int] = None
     risk_score_v2: Optional[int] = None
-    risk_delta: int = Field(0, description="Change in risk score (v2 - v1)")
+    risk_delta: int = Field(default=0, description="Difference in risk points (v2 - v1)")
     analysis_notes: str
 
 
@@ -127,22 +117,34 @@ class ContractComparisonResponse(BaseModel):
     risk_index_v1: int
     risk_index_v2: int
     risk_index_delta: int
-    trajectory: str  # "SAFER", "MORE_RISK", "NEUTRAL"
+    trajectory: str = Field(description="'SAFER', 'MORE_RISK', or 'NEUTRAL'")
     summary_of_changes: List[str]
     clause_diffs: List[ClauseDiff]
 
 
+class ContractAnalysisResponse(BaseModel):
+    document_id: str
+    disclaimer: str
+    anonymization: AnonymizationResult
+    risk_overview: RiskOverview
+    clauses: List[ClauseAnalysis]
+    attorney_checklist: AttorneyChecklist
+    analyzed_at: str
+
+
 class ChatRequest(BaseModel):
     message: str
-    contract_text: str
-    context_clauses: Optional[List[Dict]] = None
+    contract_text: Optional[str] = ""
+    context_clauses: Optional[List[Dict[str, Any]]] = None
+    history: Optional[List[Dict[str, str]]] = None
 
 
 class ChatResponse(BaseModel):
     answer: str
     disclaimer: str
-    referenced_clauses: List[str]
+    referenced_clauses: List[str] = Field(default_factory=list)
     risk_warning: Optional[str] = None
+    model_used: Optional[str] = None
 
 
 class SampleContract(BaseModel):

@@ -1,10 +1,10 @@
 """
 Deterministic contract risk scoring and exposure assessment engine.
-Evaluates clauses against real-world legal trap heuristics.
+Evaluates clauses against real-world legal trap heuristics and computes local confidence.
 """
 
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from legal_ease.models import (
     ClauseCategory,
     RiskSeverity,
@@ -20,25 +20,33 @@ class ClauseRiskEvaluation:
         severity: RiskSeverity,
         reasons: List[str],
         traps: List[str],
+        confidence: float = 0.95,
+        confidence_label: str = "HIGH",
+        confidence_reasons: Optional[List[str]] = None,
     ):
         self.risk_score = risk_score
         self.severity = severity
         self.reasons = reasons
         self.traps = traps
+        self.confidence = confidence
+        self.confidence_label = confidence_label
+        self.confidence_reasons = confidence_reasons or []
 
 
 class RiskAnalyzer:
     """
     Evaluates contract clauses using deterministic pattern matching,
-    severity weighing, and document-wide risk index calculation.
+    severity weighing, confidence estimation, and document-wide risk index calculation.
     """
 
     def evaluate_clause(self, clause: RawClause) -> ClauseRiskEvaluation:
-        """Evaluate a single raw clause and compute its risk score and identified traps."""
+        """Evaluate a single raw clause and compute its risk score, traps, and confidence."""
         text = clause.text.lower()
         score = 15  # Baseline standard score
         reasons: List[str] = []
         traps: List[str] = []
+        confidence_reasons: List[str] = []
+        confidence = 0.95  # Default high confidence for straightforward clauses
 
         # 1. Indemnification traps
         if clause.category == ClauseCategory.INDEMNIFICATION or "indemnif" in text:
@@ -67,9 +75,15 @@ class RiskAnalyzer:
                     "Unilateral Indemnification: You are required to indemnify the other party with no reciprocal protection for you."
                 )
                 traps.append("Unilateral Indemnification Trap")
+                confidence = 0.96
+                confidence_reasons.append("Definitive match: explicit unilateral indemnification structure.")
             elif "indemnif" in text:
                 score += 25
                 reasons.append("Contains indemnification obligations requiring financial defense.")
+                # If indemnity is mentioned but unclear who indemnifies whom, confidence lowers
+                if not has_contractor_indemnifies and not has_client_indemnifies:
+                    confidence = 0.68
+                    confidence_reasons.append("Ambiguous indemnifying party in clause text.")
 
             if has_attorney_fees:
                 score += 15
@@ -110,12 +124,15 @@ class RiskAnalyzer:
                     "Asymmetrical Liability: Counterparty strictly limits their damages, while your financial exposure remains uncapped."
                 )
                 traps.append("Uncapped / Asymmetric Liability Trap")
+                confidence = 0.95
+                confidence_reasons.append("Definitive match: asymmetric liability cap.")
             elif caps_at_nominal:
                 score += 45
                 reasons.append(
                     "Nominal Recovery Cap: Recovery against counterparty is capped at a negligible sum (e.g. $100 or 1 month fees)."
                 )
                 traps.append("Nominal Liability Cap Trap")
+                confidence = 0.94
             else:
                 score += 20
                 reasons.append("Standard exclusion of indirect, special, or consequential damages.")
@@ -170,6 +187,7 @@ class RiskAnalyzer:
                     "Unilateral Immediate Termination: Counterparty can cancel on a moment's notice without providing a cure period."
                 )
                 traps.append("Zero-Notice Termination Trap")
+                confidence = 0.95
             elif has_immediate_convenience:
                 score += 35
                 reasons.append(
@@ -204,6 +222,7 @@ class RiskAnalyzer:
                     "Overbroad IP Assignment: Claims rights to your pre-existing tools, libraries, or prior inventions."
                 )
                 traps.append("Pre-Existing IP Assignment Trap")
+                confidence = 0.93
             if has_moral_rights_waiver:
                 score += 20
                 reasons.append("Moral Rights Waiver: Surrenders right of attribution and integrity of created works.")
@@ -217,12 +236,8 @@ class RiskAnalyzer:
             or "non-compete" in text
             or "non compete" in text
         ):
-            has_long_term = bool(
-                re.search(r"(?:2|3|4|5|two|three)\s+years", text)
-            )
-            has_broad_geo = bool(
-                re.search(r"worldwide|entire\s+world|any\s+geographic\s+area|nationwide", text)
-            )
+            has_long_term = bool(re.search(r"(?:2|3|4|5|two|three)\s+years", text))
+            has_broad_geo = bool(re.search(r"worldwide|entire\s+world|any\s+geographic\s+area|nationwide", text))
 
             score += 45
             traps.append("Restrictive Covenant / Non-Compete Trap")
@@ -254,6 +269,28 @@ class RiskAnalyzer:
                 score += 10
                 reasons.append("Standard invoicing, fee schedules, and milestone delivery terms.")
 
+        # 8. Unclassified Boilerplate with Potential Latent Risk (Confidence Drops)
+        if clause.category == ClauseCategory.GENERAL_BOILERPLATE:
+            # If boilerplate mentions liability/remedies/waivers without a distinct category, confidence drops
+            latent_risk_keywords = ["liable", "liability", "indemn", "waive", "remedy", "breach", "damages", "forfeit"]
+            found_latent = [kw for kw in latent_risk_keywords if kw in text]
+            if found_latent:
+                score += 25
+                reasons.append(f"Uncategorized clause contains potential liability triggers: {', '.join(found_latent)}.")
+                confidence = 0.65
+                confidence_reasons.append(
+                    f"Unclassified clause with legal risk terminology ({', '.join(found_latent)}). Escalation recommended."
+                )
+            else:
+                confidence = 0.92
+                confidence_reasons.append("Standard general boilerplate.")
+
+        # Ambiguity check: dense text (>120 words) with borderline score (35-55) and no traps
+        word_count = len(text.split())
+        if word_count > 120 and 35 <= score <= 55 and not traps:
+            confidence = min(confidence, 0.70)
+            confidence_reasons.append("Dense legal verbiage with indeterminate liability thresholds.")
+
         # Cap score between 0 and 100
         final_score = max(5, min(98, score))
 
@@ -264,6 +301,14 @@ class RiskAnalyzer:
         else:
             severity = RiskSeverity.LOW
 
+        # Confidence label
+        if confidence >= 0.85:
+            confidence_label = "HIGH"
+        elif confidence >= 0.70:
+            confidence_label = "MEDIUM"
+        else:
+            confidence_label = "LOW"
+
         if not reasons:
             reasons.append("Standard contract provision without elevated liability flags.")
 
@@ -272,12 +317,15 @@ class RiskAnalyzer:
             severity=severity,
             reasons=reasons,
             traps=traps,
+            confidence=round(confidence, 2),
+            confidence_label=confidence_label,
+            confidence_reasons=confidence_reasons,
         )
 
     def calculate_overview(
         self, evaluations: List[ClauseRiskEvaluation]
     ) -> RiskOverview:
-        """Calculate document-wide risk index and executive findings."""
+        """Calculate document-wide risk index, average confidence, and executive findings."""
         if not evaluations:
             return RiskOverview(
                 legal_risk_index=0,
@@ -288,6 +336,8 @@ class RiskAnalyzer:
                 low_risk_count=0,
                 critical_findings=["Document is empty or contains no detectable clauses."],
                 executive_summary="No content available to evaluate.",
+                average_confidence=1.0,
+                escalated_clauses_count=0,
             )
 
         total_clauses = len(evaluations)
@@ -305,6 +355,8 @@ class RiskAnalyzer:
         )
         raw_index = int(weighted_sum / max(1.0, total_weight))
         risk_index = max(10, min(98, raw_index))
+
+        avg_conf = sum(e.confidence for e in evaluations) / max(1, total_clauses)
 
         all_traps: List[str] = []
         for e in evaluations:
@@ -350,4 +402,6 @@ class RiskAnalyzer:
             low_risk_count=low_count,
             critical_findings=critical_findings,
             executive_summary=exec_summary,
+            average_confidence=round(avg_conf, 2),
+            escalated_clauses_count=0,
         )
