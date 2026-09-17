@@ -139,3 +139,6 @@ def test_ui_served():
     assert "Legal-Ease" in res.text
     assert "Contract Risk Analyzer" in res.text
     assert "Nemotron" in res.text
+    assert "Poppins" in res.text
+    assert "Impact & Estimated Savings" in res.text
+    assert "Interactive Estimated Savings & ROI Calculator" in res.text
