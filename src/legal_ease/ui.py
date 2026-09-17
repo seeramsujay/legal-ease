@@ -1,18 +1,19 @@
 """
 Web UI dashboard template and component builder for Legal-Ease.
-Sleek, modern, extremely accessible (WCAG 2.1 AAA/AA compliant),
-with Cython hardware acceleration indicators, Nemotron LLM escalation management,
-and structured multi-mode contract risk intelligence.
+Ultra-modern, flashy typography (Syne, Plus Jakarta Sans, JetBrains Mono),
+ambient aurora mesh gradients, accessible (WCAG 2.1 AAA/AA compliant),
+with Cython hardware acceleration indicators, Gemini Flash-Lite / Nemotron LLM escalation,
+environment variable key allowance detection, and semantic twisted drafting radar.
 """
 
 def get_dashboard_html() -> str:
-    """Return the complete, self-contained, accessible dashboard HTML."""
+    """Return the complete, self-contained, accessible, flashy dashboard HTML."""
     return """<!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Legal-Ease: Privacy-First AI Legal Navigator & Contract Risk Analyzer powered by local heuristics, Cython C-acceleration, and NVIDIA Nemotron.">
+  <meta name="description" content="Legal-Ease: Privacy-First AI Legal Navigator & Contract Risk Analyzer powered by local semantic embeddings, Cython C-acceleration, and Google Gemini Flash-Lite / NVIDIA Nemotron.">
   <title>Legal-Ease | Privacy-First Legal AI Navigator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -38,56 +39,91 @@ def get_dashboard_html() -> str:
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Syne:wght@500;600;700;800&display=swap');
     
-    body {
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    :root {
+      --font-display: 'Syne', system-ui, -apple-system, sans-serif;
+      --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
+
+    body {
+      font-family: var(--font-body);
+      background-color: #030712;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(217, 70, 239, 0.10) 0%, transparent 40%),
+        radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    .font-display {
+      font-family: var(--font-display);
+      letter-spacing: -0.025em;
+    }
+    
     code, pre, .font-mono {
-      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      font-family: var(--font-mono);
     }
 
     /* Glassmorphic panels with accessible contrast */
     .glass-panel {
-      background: rgba(15, 23, 42, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
     }
     .glass-card {
-      background: rgba(30, 41, 59, 0.65);
-      backdrop-filter: blur(12px);
+      background: rgba(30, 41, 59, 0.70);
+      backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(168, 85, 247, 0.35);
+      box-shadow: 0 12px 35px -10px rgba(129, 140, 248, 0.15);
     }
 
-    /* WCAG AAA High Contrast Badges (Color + Text + Border) */
+    /* WCAG AAA High Contrast Badges */
     .badge-critical {
-      background: rgba(225, 29, 72, 0.2);
+      background: rgba(225, 29, 72, 0.22);
       color: #ffe4e6;
       border: 1px solid #f43f5e;
     }
     .badge-high {
-      background: rgba(239, 68, 68, 0.2);
+      background: rgba(239, 68, 68, 0.22);
       color: #fef2f2;
       border: 1px solid #ef4444;
     }
     .badge-medium {
-      background: rgba(245, 158, 11, 0.2);
+      background: rgba(245, 158, 11, 0.22);
       color: #fef3c7;
       border: 1px solid #f59e0b;
     }
     .badge-low {
-      background: rgba(16, 185, 129, 0.2);
+      background: rgba(16, 185, 129, 0.22);
       color: #ecfdf5;
       border: 1px solid #10b981;
+    }
+    .badge-gemini {
+      background: rgba(14, 165, 233, 0.25);
+      color: #f0f9ff;
+      border: 1px solid #38bdf8;
     }
     .badge-nemotron {
       background: rgba(139, 92, 246, 0.25);
       color: #f5f3ff;
       border: 1px solid #a855f7;
     }
+    .badge-twisted {
+      background: rgba(245, 158, 11, 0.25);
+      color: #fef3c7;
+      border: 1px solid #fbbf24;
+      box-shadow: 0 0 15px -3px rgba(245, 158, 11, 0.3);
+    }
     .badge-cython {
-      background: rgba(6, 182, 212, 0.2);
+      background: rgba(6, 182, 212, 0.22);
       color: #ecfeff;
       border: 1px solid #06b6d4;
     }
@@ -134,28 +170,28 @@ def get_dashboard_html() -> str:
 
   <!-- Ambient Glow Background -->
   <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-    <div class="absolute -top-40 left-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl"></div>
-    <div class="absolute top-1/3 -right-20 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl"></div>
-    <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl"></div>
+    <div class="absolute -top-40 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute top-1/3 -right-20 w-[450px] h-[450px] bg-fuchsia-600/10 rounded-full blur-[120px]"></div>
+    <div class="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[120px]"></div>
   </div>
 
   <!-- Mandatory Legal Disclaimer Banner -->
   <aside role="note" aria-label="Legal Non-Advisory Notice" class="relative z-20 bg-slate-900/95 border-b border-slate-800 text-slate-300 text-xs py-2 px-4 text-center font-medium backdrop-blur">
-    ⚖️ <strong>Non-Advisory Tool:</strong> Legal-Ease provides educational contract literacy and negotiation issue-spotting. It does not provide legal advice or substitute for a licensed attorney.
+    ⚖️ <strong>Non-Advisory Tool:</strong> Legal-Ease provides educational contract literacy, semantic obfuscation detection, and negotiation issue-spotting. It does not provide legal advice or substitute for a licensed attorney.
   </aside>
 
   <!-- Header -->
-  <header role="banner" class="relative z-20 glass-panel border-b border-slate-800/80 sticky top-0 shadow-lg">
+  <header role="banner" class="relative z-20 glass-panel border-b border-slate-800/80 sticky top-0 shadow-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
       
       <!-- Brand & Telemetry Badges -->
       <div class="flex items-center space-x-3.5">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/20 text-lg font-bold" aria-hidden="true">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/20 text-lg font-bold" aria-hidden="true">
           ⚖️
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-lg font-extrabold tracking-tight text-white">
+            <span class="font-display text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">
               Legal-Ease
             </span>
             <!-- Acceleration Badge -->
@@ -163,7 +199,7 @@ def get_dashboard_html() -> str:
               ⚡ Cython Binary Active
             </span>
           </div>
-          <p class="text-[11px] text-slate-400">Local-First AI Contract Navigator & Risk Engine</p>
+          <p class="text-[11px] text-slate-400 font-medium">Privacy-First AI Contract Navigator & Semantic Risk Engine</p>
         </div>
       </div>
 
@@ -176,10 +212,11 @@ def get_dashboard_html() -> str:
           100% Local PII Shield
         </span>
 
-        <!-- AI / Nemotron Model Settings Button -->
+        <!-- AI / LLM Model Settings Button -->
         <button onclick="toggleLLMModal()" id="llm-status-btn" aria-haspopup="dialog" aria-expanded="false" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800/90 hover:bg-slate-750 text-slate-200 border border-slate-700 shadow-sm transition">
-          <span id="nemotron-dot" class="w-2 h-2 rounded-full bg-slate-500" aria-hidden="true"></span>
-          <span id="nemotron-label">Nemotron / OpenAI AI</span>
+          <span id="llm-dot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" aria-hidden="true"></span>
+          <span id="llm-label">Gemini / Nemotron AI</span>
+          <span id="env-badge-pill" class="hidden text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">ENV ACTIVE</span>
           <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </button>
 
@@ -208,18 +245,18 @@ def get_dashboard_html() -> str:
     </nav>
   </header>
 
-  <!-- ==================== ACCESSIBLE NEMOTRON SETTINGS MODAL ==================== -->
-  <div id="llm-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+  <!-- ==================== ACCESSIBLE AI / LLM SETTINGS MODAL ==================== -->
+  <div id="llm-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
     <div class="glass-panel w-full max-w-xl rounded-2xl p-6 space-y-5 border border-slate-700 shadow-2xl">
       
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-base" aria-hidden="true">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white text-base" aria-hidden="true">
             🧠
           </div>
           <div>
-            <h2 id="modal-title" class="text-base font-bold text-white">NVIDIA Nemotron & LLM Configuration</h2>
-            <p class="text-xs text-slate-400">OpenAI-Compatible endpoint for confidence-based deep legal reasoning</p>
+            <h2 id="modal-title" class="font-display text-base font-bold text-white">AI Engine & Model Configuration</h2>
+            <p class="text-xs text-slate-400">Google Gemini Flash-Lite, NVIDIA Nemotron, & OpenAI Compatibility</p>
           </div>
         </div>
         <button onclick="toggleLLMModal()" aria-label="Close modal dialog" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
@@ -227,36 +264,57 @@ def get_dashboard_html() -> str:
 
       <div class="space-y-4 text-xs">
         
-        <!-- Architecture Explanation Banner -->
-        <div class="p-3.5 rounded-xl bg-indigo-950/50 border border-indigo-800/50 text-indigo-200 space-y-1 leading-relaxed">
-          <strong class="text-white">⚡ Local-First Routing Architecture:</strong> Contracts are analyzed locally with 100% PII redaction. If local heuristic confidence is high (&ge; 75%), analysis completes in sub-milliseconds with 0 external network calls. If confidence is low, only the anonymized clause is escalated to Nemotron!
+        <!-- Environment Key Status Banner -->
+        <div id="modal-env-status" class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 space-y-1">
+          <div class="font-bold flex items-center gap-1.5 text-emerald-300">
+            <span>✨</span> <span>Environment Allowance Active</span>
+          </div>
+          <p class="text-[11px] leading-relaxed text-emerald-200/90" id="modal-env-desc">
+            API key auto-detected from server environment. Evaluator does not need to configure BYOK!
+          </p>
+        </div>
+
+        <!-- Provider Presets Selector -->
+        <div>
+          <label class="block font-bold text-slate-300 mb-1.5">Select AI Provider Preset:</label>
+          <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="AI Providers">
+            <button type="button" onclick="selectProviderPreset('gemini')" id="btn-preset-gemini" class="p-2.5 rounded-xl border border-indigo-500 bg-indigo-950/60 text-left transition hover:border-indigo-400">
+              <div class="font-extrabold text-white text-[12px] flex items-center gap-1">
+                <span>🚀</span> Gemini Flash
+              </div>
+              <div class="text-[10px] text-indigo-300 mt-0.5">Fast & Economical</div>
+            </button>
+            <button type="button" onclick="selectProviderPreset('nemotron')" id="btn-preset-nemotron" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition hover:border-purple-400">
+              <div class="font-extrabold text-white text-[12px] flex items-center gap-1">
+                <span>🧠</span> Nemotron 70B
+              </div>
+              <div class="text-[10px] text-purple-300 mt-0.5">High Reasoning</div>
+            </button>
+            <button type="button" onclick="selectProviderPreset('openai')" id="btn-preset-openai" class="p-2.5 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition hover:border-slate-500">
+              <div class="font-extrabold text-white text-[12px] flex items-center gap-1">
+                <span>⚡</span> GPT-4o-mini
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">OpenAI Standard</div>
+            </button>
+          </div>
         </div>
 
         <!-- API Key Input -->
         <div>
-          <label class="block font-bold text-slate-300 mb-1" for="modal-api-key">API Key (Nemotron / OpenAI / OpenRouter)</label>
-          <input type="password" id="modal-api-key" placeholder="nvapi-... or sk-..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500">
+          <label class="block font-bold text-slate-300 mb-1" for="modal-api-key">API Key (Optional if set in environment)</label>
+          <input type="password" id="modal-api-key" placeholder="AIzaSy... or nvapi-... or sk-..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500">
         </div>
 
-        <!-- Base URL with Presets -->
+        <!-- Base URL -->
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="font-bold text-slate-300" for="modal-base-url">Base URL</label>
-            <div class="space-x-1" role="group" aria-label="Preset URLs">
-              <button type="button" onclick="setBaseUrlPreset('https://integrate.api.nvidia.com/v1', 'nvidia/llama-3.1-nemotron-70b-instruct')" class="text-[11px] text-purple-400 hover:underline font-semibold">NVIDIA Nemotron</button>
-              <span class="text-slate-600" aria-hidden="true">•</span>
-              <button type="button" onclick="setBaseUrlPreset('https://openrouter.ai/api/v1', 'nvidia/llama-3.1-nemotron-70b-instruct')" class="text-[11px] text-indigo-400 hover:underline font-semibold">OpenRouter</button>
-              <span class="text-slate-600" aria-hidden="true">•</span>
-              <button type="button" onclick="setBaseUrlPreset('http://localhost:11434/v1', 'nemotron-mini')" class="text-[11px] text-cyan-400 hover:underline font-semibold">Local vLLM/Ollama</button>
-            </div>
-          </div>
-          <input type="text" id="modal-base-url" value="https://integrate.api.nvidia.com/v1" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-[11px] focus:border-indigo-500">
+          <label class="block font-bold text-slate-300 mb-1" for="modal-base-url">Base URL</label>
+          <input type="text" id="modal-base-url" value="https://generativelanguage.googleapis.com/v1beta/openai" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-[11px] focus:border-indigo-500">
         </div>
 
         <!-- Model Identifier -->
         <div>
           <label class="block font-bold text-slate-300 mb-1" for="modal-model-name">Model Name</label>
-          <input type="text" id="modal-model-name" value="nvidia/llama-3.1-nemotron-70b-instruct" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-[11px] focus:border-indigo-500">
+          <input type="text" id="modal-model-name" value="gemini-2.0-flash-lite" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white font-mono text-[11px] focus:border-indigo-500">
         </div>
 
         <!-- Confidence Threshold Slider -->
@@ -266,7 +324,7 @@ def get_dashboard_html() -> str:
             <span id="threshold-val" class="font-extrabold text-indigo-400">75%</span>
           </div>
           <input type="range" id="modal-threshold" min="50" max="95" value="75" aria-valuemin="50" aria-valuemax="95" aria-valuenow="75" oninput="document.getElementById('threshold-val').innerText = this.value + '%'" class="w-full accent-indigo-500">
-          <p class="text-[11px] text-slate-400 mt-1">Clauses with local confidence below this threshold escalate to Nemotron for deep synthesis.</p>
+          <p class="text-[11px] text-slate-400 mt-1">Clauses with local confidence below this threshold (or twisted drafting) escalate to the LLM for deep synthesis.</p>
         </div>
 
       </div>
@@ -279,7 +337,7 @@ def get_dashboard_html() -> str:
         <div class="flex items-center gap-2">
           <button type="button" onclick="toggleLLMModal()" class="px-3 py-2 rounded-lg text-slate-400 hover:text-white text-xs font-semibold">Cancel</button>
           <button type="button" onclick="saveLLMSettings()" id="modal-save-btn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition">
-            Save & Enable Nemotron
+            Save & Activate
           </button>
         </div>
       </div>
@@ -297,10 +355,10 @@ def get_dashboard_html() -> str:
       <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
+            <h2 class="font-display text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
               <span>Contract Risk Matrix & Plain-English Navigator</span>
             </h2>
-            <p class="text-xs text-slate-400">Local-first analysis accelerated by Cython C-extensions with Nemotron deep reasoning</p>
+            <p class="text-xs text-slate-400">Local-first analysis accelerated by Cython C-extensions with Gemini Flash-Lite / Nemotron deep reasoning</p>
           </div>
           
           <!-- Sample Contract Selectors -->
@@ -339,7 +397,7 @@ def get_dashboard_html() -> str:
             </button>
           </div>
 
-          <button type="button" onclick="runAnalysis()" id="analyze-btn" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99]">
+          <button type="button" onclick="runAnalysis()" id="analyze-btn" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99]">
             <span>Analyze & Score Hazards</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
@@ -372,6 +430,9 @@ def get_dashboard_html() -> str:
             <span id="avg-confidence-pill" class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 font-bold text-[11px]">
               Local Confidence: 94%
             </span>
+            <span id="twisted-count-pill" class="hidden px-2.5 py-0.5 rounded-full badge-twisted font-bold text-[11px]">
+              🌀 Twisted Drafting: 0
+            </span>
             <span id="escalated-count-pill" class="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-500/40 font-bold text-[11px]">
               Escalated: 0 clauses
             </span>
@@ -386,7 +447,7 @@ def get_dashboard_html() -> str:
             <div class="flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-800 text-center relative overflow-hidden">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Legal Risk Index</span>
               <div class="relative flex items-center justify-center my-3" aria-label="Risk Score">
-                <span id="score-meter" class="text-6xl font-black text-white tracking-tight">--</span>
+                <span id="score-meter" class="font-display text-6xl font-black text-white tracking-tight">--</span>
                 <span class="text-xs font-bold text-slate-400 ml-1">/100</span>
               </div>
               <span id="score-badge" class="px-3 py-1 text-xs font-extrabold rounded-full badge-high uppercase tracking-wider">
@@ -397,22 +458,22 @@ def get_dashboard_html() -> str:
             <!-- Stats & Exposure Breakdown -->
             <div class="lg:col-span-3 space-y-4">
               <div>
-                <h3 class="text-lg font-extrabold text-white tracking-tight" id="results-title">Contract Assessment</h3>
+                <h3 class="font-display text-lg font-extrabold text-white tracking-tight" id="results-title">Contract Assessment</h3>
                 <p class="text-xs text-slate-200 mt-1.5 leading-relaxed" id="executive-summary"></p>
               </div>
 
               <!-- Clause Count Counters -->
               <div class="grid grid-cols-3 gap-3" role="group" aria-label="Risk Summary Counts">
                 <div class="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-center">
-                  <div class="text-2xl font-black text-rose-300" id="high-risk-count">0</div>
+                  <div class="font-display text-2xl font-black text-rose-300" id="high-risk-count">0</div>
                   <div class="text-[11px] font-bold text-rose-200 mt-0.5">High Risk Traps</div>
                 </div>
                 <div class="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-center">
-                  <div class="text-2xl font-black text-amber-300" id="medium-risk-count">0</div>
+                  <div class="font-display text-2xl font-black text-amber-300" id="medium-risk-count">0</div>
                   <div class="text-[11px] font-bold text-amber-200 mt-0.5">Moderate Risks</div>
                 </div>
                 <div class="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-center">
-                  <div class="text-2xl font-black text-emerald-300" id="low-risk-count">0</div>
+                  <div class="font-display text-2xl font-black text-emerald-300" id="low-risk-count">0</div>
                   <div class="text-[11px] font-bold text-emerald-200 mt-0.5">Standard Clauses</div>
                 </div>
               </div>
@@ -430,7 +491,7 @@ def get_dashboard_html() -> str:
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div class="flex space-x-6" role="tablist" aria-label="Results Explorer View">
             <button role="tab" id="view-clauses-btn" aria-selected="true" onclick="switchAnalysisView('clauses')" class="font-bold text-xs sm:text-sm text-indigo-400 border-b-2 border-indigo-500 pb-2 transition">
-              Clause-by-Clause Translation & Risks
+              Clause-by-Clause Translation & Semantic Insights
             </button>
             <button role="tab" id="view-checklist-btn" aria-selected="false" onclick="switchAnalysisView('checklist')" class="font-bold text-xs sm:text-sm text-slate-400 hover:text-slate-200 border-b-2 border-transparent pb-2 transition">
               Attorney Consultation Brief
@@ -440,197 +501,217 @@ def get_dashboard_html() -> str:
             <label for="filter-risk" class="text-slate-300 font-bold">Filter Clauses:</label>
             <select id="filter-risk" onchange="filterClauses(this.value)" class="text-xs rounded-lg border-slate-700 py-1.5 px-3 bg-slate-900 text-slate-200 font-semibold focus:border-indigo-500">
               <option value="ALL">All Clauses</option>
+              <option value="TWISTED">🌀 Twisted / Euphemistic Only</option>
               <option value="HIGH">🚨 High Risk Traps Only</option>
-              <option value="ESCALATED">🧠 Nemotron Escalated Only</option>
+              <option value="ESCALATED">🧠 AI Escalated Only</option>
               <option value="MEDIUM">⚠️ Moderate Only</option>
               <option value="LOW">✅ Standard Only</option>
             </select>
           </div>
         </div>
 
-        <!-- Clause Cards Container -->
-        <div id="clause-cards-view" class="space-y-4" role="region" aria-label="Clause Cards">
-          <!-- Dynamically populated -->
+        <!-- VIEW 1: CLAUSE CARDS -->
+        <div id="clause-cards-view" class="space-y-4" role="region" aria-label="Clause Breakdown">
+          <!-- Injected via JS -->
         </div>
 
-        <!-- Attorney Consultation Checklist View -->
-        <div id="attorney-checklist-view" class="hidden glass-panel rounded-2xl p-6 space-y-6 shadow-xl" role="region" aria-label="Attorney Consultation Brief">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
-              <h3 class="text-base sm:text-lg font-extrabold text-white">Attorney Consultation Brief</h3>
-              <p class="text-xs text-slate-400">Structured briefing memo with prioritized legal questions and counter-proposal redlines.</p>
+        <!-- VIEW 2: ATTORNEY CONSULTATION BRIEF -->
+        <div id="attorney-checklist-view" class="hidden space-y-6" role="region" aria-label="Attorney Consultation Brief">
+          <div class="glass-panel rounded-2xl p-6 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div>
+                <h3 class="font-display text-lg font-extrabold text-white">Attorney Consultation Brief</h3>
+                <p class="text-xs text-slate-400">Exportable questions and priority redline fallback positions for your legal counsel.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="copyChecklistMarkdown()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition">
+                  📋 Copy Markdown
+                </button>
+                <button type="button" onclick="downloadChecklistFile()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-sm">
+                  ⬇️ Download .md
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="copyChecklistMarkdown()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-1.5 rounded-lg border border-slate-700 transition inline-flex items-center gap-1.5">
-                📋 Copy Markdown
-              </button>
-              <button type="button" onclick="downloadChecklistFile()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5 shadow-md shadow-indigo-600/20">
-                ⬇️ Export Brief (.md)
-              </button>
+
+            <!-- Questions to ask Counsel -->
+            <div class="space-y-3">
+              <h4 class="text-xs font-extrabold text-indigo-300 uppercase tracking-wider">Specific Questions For Counsel:</h4>
+              <div id="checklist-questions-list" class="space-y-3">
+                <!-- Injected via JS -->
+              </div>
             </div>
-          </div>
 
-          <div id="checklist-questions-list" class="space-y-4">
-            <!-- Populated by JS -->
-          </div>
-
-          <div>
-            <h4 class="text-sm font-bold text-white mb-2.5">Priority Counter-Proposal Checklist (Redlines)</h4>
-            <ul id="checklist-redlines-list" class="space-y-2 text-xs text-slate-200">
-              <!-- Redline items populated by JS -->
-            </ul>
+            <!-- Priority Redline Checklist -->
+            <div class="space-y-3 pt-2">
+              <h4 class="text-xs font-extrabold text-indigo-300 uppercase tracking-wider">Priority Negotiation Checklist:</h4>
+              <ul id="checklist-redlines-list" class="space-y-2 text-xs text-slate-200 font-medium">
+                <!-- Injected via JS -->
+              </ul>
+            </div>
           </div>
         </div>
 
       </div>
     </section>
 
-    <!-- ==================== TAB 2: COMPARATOR ==================== -->
+    <!-- ==================== TAB 2: VERSION COMPARATOR ==================== -->
     <section id="tab-comparator" role="tabpanel" aria-labelledby="nav-tab-comparator" class="hidden space-y-6">
-      <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl">
+      <div class="glass-panel rounded-2xl p-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-base sm:text-lg font-extrabold text-white">Side-by-Side Contract Comparator</h2>
-            <p class="text-xs text-slate-400">Accelerated by native Cython Jaccard token alignment for instant diff tracking</p>
+            <h2 class="font-display text-lg font-extrabold text-white">Contract Version Redline Comparator</h2>
+            <p class="text-xs text-slate-400">Compare original vs counterparty proposed redline to track risk trajectory</p>
           </div>
-          <button type="button" onclick="loadSampleComparison()" class="text-xs bg-indigo-950/70 hover:bg-indigo-900/70 text-indigo-300 font-bold px-3.5 py-1.5 rounded-lg border border-indigo-700/50 transition">
-            ⚡ 1-Click Load: Original vs. Negotiated Draft
+          <button type="button" onclick="loadSampleComparison()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-1.5 rounded-lg border border-slate-700 transition">
+            Load Sample Redline Diff
           </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label for="compare-v1" class="block text-xs font-bold text-slate-300 mb-1">Contract A (Original / Standard Draft):</label>
-            <textarea id="compare-v1" rows="7" class="w-full font-mono text-xs text-slate-200 p-3 rounded-xl bg-slate-900 border border-slate-800 focus:ring-2 focus:ring-indigo-500" placeholder="Paste base agreement..."></textarea>
+            <label for="compare-v1" class="block text-xs font-bold text-rose-300 mb-1">Contract Version A (Original):</label>
+            <textarea id="compare-v1" rows="9" class="w-full font-mono text-xs text-slate-200 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed" placeholder="Paste initial draft..."></textarea>
           </div>
           <div>
-            <label for="compare-v2" class="block text-xs font-bold text-slate-300 mb-1">Contract B (Counter-Proposal / Revised Draft):</label>
-            <textarea id="compare-v2" rows="7" class="w-full font-mono text-xs text-slate-200 p-3 rounded-xl bg-slate-900 border border-slate-800 focus:ring-2 focus:ring-indigo-500" placeholder="Paste revised agreement..."></textarea>
+            <label for="compare-v2" class="block text-xs font-bold text-emerald-300 mb-1">Contract Version B (Revised Proposal):</label>
+            <textarea id="compare-v2" rows="9" class="w-full font-mono text-xs text-slate-200 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed" placeholder="Paste counter-proposal or redline..."></textarea>
           </div>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex justify-end pt-1">
           <button type="button" onclick="runComparison()" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition">
-            Compare Versions & Liability Shift
+            <span>Calculate Risk Delta & Diff</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
         </div>
       </div>
 
-      <!-- Comparison Results -->
       <div id="comparator-results" role="region" aria-label="Comparison Results" class="hidden space-y-6">
-        <div class="glass-panel rounded-2xl p-6 shadow-xl space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <!-- Results Card -->
+        <div class="glass-panel rounded-2xl p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
             <div>
-              <span id="compare-trajectory-badge" class="px-3 py-1 text-xs font-extrabold rounded-full badge-low uppercase">
-                ANALYZING
+              <span id="compare-trajectory-badge" class="px-3 py-1 text-xs font-bold rounded-full badge-low uppercase">
+                TRAJECTORY
               </span>
-              <h3 class="text-base font-bold text-white mt-2">Overall Liability Trajectory</h3>
-              <p class="text-xs text-slate-300" id="compare-scores-summary"></p>
+              <h3 class="font-display text-base font-extrabold text-white mt-2" id="compare-scores-summary"></h3>
             </div>
           </div>
-
-          <div>
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Summary of Key Changes:</h4>
-            <ul id="compare-changes-list" class="space-y-1.5 text-xs text-slate-300"></ul>
+          
+          <div class="space-y-2">
+            <h4 class="text-xs font-extrabold text-slate-300 uppercase tracking-wider">Key Redline Shifts:</h4>
+            <ul id="compare-changes-list" class="space-y-1 text-xs text-slate-200 font-medium"></ul>
           </div>
-        </div>
 
-        <div id="compare-diff-cards" class="space-y-4">
-          <!-- Diff cards populated by JS -->
+          <div class="space-y-3 pt-2">
+            <h4 class="text-xs font-extrabold text-slate-300 uppercase tracking-wider">Clause Level Diffs & Analysis:</h4>
+            <div id="compare-diff-cards" class="space-y-3"></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ==================== TAB 3: CHAT ==================== -->
-    <section id="tab-chat" role="tabpanel" aria-labelledby="nav-tab-chat" class="hidden space-y-6">
-      <div class="glass-panel rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 class="text-base sm:text-lg font-extrabold text-white">Legal Navigator Assistant</h2>
-            <p class="text-xs text-slate-400">Context-grounded assistant with mandatory non-advisory guardrails and clause citations</p>
+    <!-- ==================== TAB 3: LEGAL NAVIGATOR AI CHAT ==================== -->
+    <section id="tab-chat" role="tabpanel" aria-labelledby="nav-tab-chat" class="hidden space-y-4">
+      <div class="glass-panel rounded-2xl p-6 flex flex-col h-[650px] shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white" aria-hidden="true">
+              💬
+            </div>
+            <div>
+              <h2 class="font-display text-base font-bold text-white">Contextual Legal Navigator AI</h2>
+              <p class="text-xs text-slate-400">Ask questions grounded strictly in your analyzed contract</p>
+            </div>
           </div>
-          <span id="chat-model-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Engine: Local Grounded Rules
+          <span id="chat-model-badge" class="text-xs text-indigo-300 font-bold bg-indigo-950/70 border border-indigo-800/60 px-2.5 py-1 rounded-full">
+            Active Provider
           </span>
         </div>
 
-        <!-- Quick Question Chips -->
-        <div class="flex flex-wrap gap-2 pt-1" role="group" aria-label="Suggested Prompts">
-          <button type="button" onclick="sendQuickPrompt('Can the client terminate without paying me for completed work?')" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition font-semibold">
-            ❓ Can they cancel without paying?
-          </button>
-          <button type="button" onclick="sendQuickPrompt('Who owns the code and tools I create under this agreement?')" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition font-semibold">
-            💡 Who owns the IP?
-          </button>
-          <button type="button" onclick="sendQuickPrompt('What is my maximum financial liability if something goes wrong?')" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition font-semibold">
-            🛡️ What is my maximum liability?
-          </button>
-          <button type="button" onclick="sendQuickPrompt('Is there a binding arbitration clause or class action waiver?')" class="text-xs bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition font-semibold">
-            ⚖️ Is there an arbitration clause?
-          </button>
-        </div>
-
-        <!-- Accessible Chat Log Window -->
-        <div id="chat-messages" role="log" aria-live="polite" aria-label="Conversation Log" class="h-96 overflow-y-auto p-4 bg-slate-900/90 rounded-xl border border-slate-800 space-y-4 text-xs">
-          <div class="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700/60 max-w-xl text-slate-200 shadow-md">
-            <p class="leading-relaxed">
-              👋 Greetings! I am your <strong>Legal-Ease Navigator</strong>. Ask me any question regarding the active contract text. If you configured a Nemotron API key, questions can leverage deep neural synthesis!
+        <!-- Chat History Window -->
+        <div id="chat-messages" role="log" aria-live="polite" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="max-w-xl p-4 bg-slate-900/90 text-slate-200 rounded-xl border border-slate-800 text-xs space-y-2 leading-relaxed">
+            <p class="font-bold text-white flex items-center gap-1.5">
+              <span>👋</span> Welcome to Legal-Ease Navigator!
             </p>
+            <p>I can help break down convoluted terms, locate hidden indemnification traps, explain payment withholding risks, and suggest protective counter-proposals.</p>
+            <p class="text-[11px] text-slate-400">Tip: Click one of the quick prompts below or type your question.</p>
           </div>
         </div>
 
+        <!-- Quick Prompts -->
+        <div class="py-2 flex flex-wrap gap-1.5 border-t border-slate-800 text-[11px]">
+          <span class="text-slate-400 font-bold py-1">Quick:</span>
+          <button type="button" onclick="sendQuickPrompt('Can the client terminate without paying me?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            Terminate without paying?
+          </button>
+          <button type="button" onclick="sendQuickPrompt('Do I give away my pre-existing IP in this agreement?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            Do I surrender pre-existing IP?
+          </button>
+          <button type="button" onclick="sendQuickPrompt('What is the worst-case financial liability for me under indemnification?')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            Worst-case indemnity exposure?
+          </button>
+        </div>
+
         <!-- Chat Input Form -->
-        <form onsubmit="handleChatSubmit(event)" class="flex gap-2">
-          <label for="chat-input" class="sr-only">Ask a question about your contract</label>
-          <input type="text" id="chat-input" class="flex-1 text-xs rounded-xl border border-slate-700 bg-slate-900 p-3 text-white placeholder:text-slate-500 focus:border-indigo-500" placeholder="Ask a question (e.g., 'What happens if deliverables are delayed?')...">
-          <button type="submit" class="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold rounded-xl shadow-md transition">
-            Send Query
+        <form onsubmit="handleChatSubmit(event)" class="flex gap-2 pt-2 border-t border-slate-800">
+          <label for="chat-input" class="sr-only">Ask a question about the contract</label>
+          <input type="text" id="chat-input" placeholder="Ask about indemnification, liability, IP rights, or termination..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition">
+            Send
           </button>
         </form>
       </div>
     </section>
 
-    <!-- ==================== TAB 4: PRIVACY VAULT ==================== -->
+    <!-- ==================== TAB 4: PRIVACY & PII VAULT ==================== -->
     <section id="tab-privacy" role="tabpanel" aria-labelledby="nav-tab-privacy" class="hidden space-y-6">
-      <div class="glass-panel rounded-2xl p-6 space-y-6 shadow-xl">
-        <div>
-          <h2 class="text-base sm:text-lg font-extrabold text-white">🛡️ Zero-Knowledge Local PII Shield Audit</h2>
-          <p class="text-xs text-slate-400">
-            Sensitive personal & business identifiers (names, SSNs, bank accounts, emails, fees) are permanently masked before any external processing.
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-          <div class="p-5 bg-slate-900/80 rounded-xl border border-slate-800">
-            <span class="text-3xl font-black text-indigo-400" id="privacy-total-redacted">0</span>
-            <div class="text-xs font-bold text-slate-400 mt-1">Sensitive Entities Masked</div>
+      <div class="glass-panel rounded-2xl p-6 space-y-6">
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl font-bold" aria-hidden="true">
+            🛡️
           </div>
-          <div class="p-5 bg-slate-900/80 rounded-xl border border-slate-800">
-            <span class="text-3xl font-black text-emerald-400" id="privacy-score-display">100%</span>
-            <div class="text-xs font-bold text-slate-400 mt-1">Local Privacy Score</div>
-          </div>
-          <div class="p-5 bg-slate-900/80 rounded-xl border border-slate-800">
-            <span class="text-3xl font-black text-purple-400">Client Sandbox</span>
-            <div class="text-xs font-bold text-slate-400 mt-1">Local In-Memory Pseudonymization</div>
+          <div>
+            <h2 class="font-display text-lg font-extrabold text-white">Local Privacy Shield & PII Sanitization Vault</h2>
+            <p class="text-xs text-slate-400">Verifiable local redaction tokens protecting personal and commercial identifiers</p>
           </div>
         </div>
 
-        <div>
-          <h3 class="text-sm font-bold text-white mb-2.5">Redacted Entities Audit Log</h3>
-          <div class="overflow-x-auto border border-slate-800 rounded-xl">
-            <table class="min-w-full divide-y divide-slate-800 text-xs text-left" aria-label="PII Redaction Audit Table">
-              <thead class="bg-slate-900 text-slate-300 font-bold uppercase tracking-wider">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <div class="font-extrabold text-white">100% Client-Side Privacy Guarantee</div>
+            <p class="text-slate-300 leading-relaxed">
+              No names, emails, telephone numbers, tax IDs (SSN/EIN), or confidential currency amounts ever leave your machine without tokenization. All upstream AI synthesis is executed exclusively on anonymized pseudonyms.
+            </p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <div class="font-extrabold text-white">Privacy Metrics</div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span>Total Entities Masked:</span>
+              <strong id="privacy-total-redacted" class="text-emerald-400">0</strong>
+            </div>
+            <div class="flex items-center justify-between text-slate-300">
+              <span>Estimated Privacy Coverage:</span>
+              <strong id="privacy-score-display" class="text-emerald-400">100%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="text-xs font-extrabold text-slate-300 uppercase tracking-wider">Sanitization Table (Pseudonym Mapping):</h3>
+          <div class="overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase font-bold text-[11px] border-b border-slate-800">
                 <tr>
-                  <th scope="col" class="px-4 py-3">Entity Type</th>
-                  <th scope="col" class="px-4 py-3">Assigned Token</th>
-                  <th scope="col" class="px-4 py-3">Original Sensitive Value</th>
+                  <th scope="col" class="px-4 py-3">Category</th>
+                  <th scope="col" class="px-4 py-3">Redacted Token</th>
+                  <th scope="col" class="px-4 py-3">Original Value</th>
                 </tr>
               </thead>
-              <tbody id="privacy-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+              <tbody id="privacy-table-body" class="divide-y divide-slate-800/60 bg-slate-900/40">
                 <tr>
-                  <td colspan="3" class="px-4 py-6 text-center text-slate-500">
-                    No active analysis yet. Load a contract in the Analyzer tab to view the live audit vault.
-                  </td>
+                  <td colspan="3" class="px-4 py-4 text-center text-slate-400">Analyze a contract to inspect local redaction tokens.</td>
                 </tr>
               </tbody>
             </table>
@@ -641,14 +722,14 @@ def get_dashboard_html() -> str:
 
   </main>
 
-  <!-- Footer Landmark -->
-  <footer role="contentinfo" class="relative z-10 glass-panel border-t border-slate-800 py-4 text-center text-xs text-slate-400">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+  <!-- Accessible Footer -->
+  <footer role="contentinfo" class="relative z-10 glass-panel border-t border-slate-800 text-slate-400 text-xs py-5 px-4 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
       <div>
-        <strong>Legal-Ease</strong> — Built strictly with <code class="text-indigo-400 font-mono">uv</code> and <code class="text-indigo-400 font-mono">pnpm</code>. Repository size: &lt; 1 MB.
+        <strong>Legal-Ease v1.3.0</strong> — Privacy-First AI Contract Navigator with Google Gemini Flash-Lite & NVIDIA Nemotron
       </div>
       <div>
-        Hackathon Vertical: <strong>AI for Legal Assistance & Access</strong> (Local Shield + Cython + Nemotron)
+        AI for Legal Assistance & Access | <a href="https://github.com/seeramsujay/legal-ease" target="_blank" rel="noopener noreferrer" class="text-indigo-400 hover:underline">GitHub Repository</a>
       </div>
     </div>
   </footer>
@@ -659,10 +740,50 @@ def get_dashboard_html() -> str:
     let cachedSamples = [];
     let llmSettings = {
       api_key_configured: false,
-      base_url: 'https://integrate.api.nvidia.com/v1',
-      model_name: 'nvidia/llama-3.1-nemotron-70b-instruct',
-      confidence_threshold: 0.75
+      provider: 'gemini',
+      base_url: 'https://generativelanguage.googleapis.com/v1beta/openai',
+      model_name: 'gemini-2.0-flash-lite',
+      confidence_threshold: 0.75,
+      api_key_source: 'none'
     };
+
+    const PRESETS = {
+      gemini: {
+        provider: 'gemini',
+        base_url: 'https://generativelanguage.googleapis.com/v1beta/openai',
+        model_name: 'gemini-2.0-flash-lite',
+        label: 'Google Gemini 2.0 Flash-Lite'
+      },
+      nemotron: {
+        provider: 'nemotron',
+        base_url: 'https://integrate.api.nvidia.com/v1',
+        model_name: 'nvidia/llama-3.1-nemotron-70b-instruct',
+        label: 'NVIDIA Nemotron 70B'
+      },
+      openai: {
+        provider: 'openai',
+        base_url: 'https://api.openai.com/v1',
+        model_name: 'gpt-4o-mini',
+        label: 'OpenAI GPT-4o-mini'
+      }
+    };
+
+    function selectProviderPreset(provKey) {
+      const p = PRESETS[provKey];
+      if (!p) return;
+      document.getElementById('modal-base-url').value = p.base_url;
+      document.getElementById('modal-model-name').value = p.model_name;
+
+      ['gemini', 'nemotron', 'openai'].forEach(k => {
+        const btn = document.getElementById(`btn-preset-${k}`);
+        if (k === provKey) {
+          btn.className = 'p-2.5 rounded-xl border border-indigo-500 bg-indigo-950/60 text-left transition';
+        } else {
+          btn.className = 'p-2.5 rounded-xl border border-slate-700 bg-slate-900/60 text-left transition hover:border-slate-500';
+        }
+      });
+      llmSettings.provider = provKey;
+    }
 
     // Accessible Tab Switcher (WCAG Tablist)
     function switchTab(tabName) {
@@ -770,7 +891,7 @@ def get_dashboard_html() -> str:
       }
     }
 
-    // Nemotron Settings Modal handlers
+    // LLM Settings Modal handlers
     function toggleLLMModal() {
       const modal = document.getElementById('llm-modal');
       const btn = document.getElementById('llm-status-btn');
@@ -781,26 +902,42 @@ def get_dashboard_html() -> str:
       }
     }
 
-    function setBaseUrlPreset(url, model) {
-      document.getElementById('modal-base-url').value = url;
-      document.getElementById('modal-model-name').value = model;
-    }
-
     async function loadLLMSettings() {
       try {
         const res = await fetch('/api/settings/llm');
         if (res.ok) {
           llmSettings = await res.json();
-          const dot = document.getElementById('nemotron-dot');
-          const label = document.getElementById('nemotron-label');
+          const dot = document.getElementById('llm-dot');
+          const label = document.getElementById('llm-label');
+          const envBadge = document.getElementById('env-badge-pill');
+          const envBox = document.getElementById('modal-env-status');
+          const envDesc = document.getElementById('modal-env-desc');
+
+          const prov = llmSettings.provider || 'gemini';
+          const model = llmSettings.model_name || 'gemini-2.0-flash-lite';
+          selectProviderPreset(prov);
+
           if (llmSettings.api_key_configured) {
-            dot.className = 'w-2 h-2 rounded-full bg-purple-400 animate-pulse';
-            label.innerText = 'Nemotron Active';
-            document.getElementById('chat-model-badge').innerText = `Engine: ${llmSettings.model_name}`;
+            dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+            label.innerText = `${prov.toUpperCase()}: ${model}`;
+            document.getElementById('chat-model-badge').innerText = `Engine: ${model}`;
+
+            if (llmSettings.api_key_source === 'environment') {
+              envBadge.classList.remove('hidden');
+              envBox.classList.remove('hidden');
+              envDesc.innerText = `Active API Key read from server environment. Evaluator does not need to enter BYOK!`;
+            } else {
+              envBadge.classList.add('hidden');
+              envBox.classList.add('hidden');
+            }
           } else {
             dot.className = 'w-2 h-2 rounded-full bg-slate-500';
-            label.innerText = 'Configure Nemotron';
+            label.innerText = `Configure AI (${prov.toUpperCase()})`;
+            envBadge.classList.add('hidden');
+            envBox.classList.remove('hidden');
+            envDesc.innerText = `No environment key detected. You can set GEMINI_API_KEY in your environment or enter an API key below.`;
           }
+
           if (llmSettings.base_url) document.getElementById('modal-base-url').value = llmSettings.base_url;
           if (llmSettings.model_name) document.getElementById('modal-model-name').value = llmSettings.model_name;
           if (llmSettings.confidence_threshold) {
@@ -823,6 +960,7 @@ def get_dashboard_html() -> str:
         base_url: baseUrl,
         model_name: modelName,
         confidence_threshold: threshold,
+        provider: llmSettings.provider,
         enabled: true
       };
       if (apiKey) payload.api_key = apiKey;
@@ -836,7 +974,7 @@ def get_dashboard_html() -> str:
         if (res.ok) {
           await loadLLMSettings();
           toggleLLMModal();
-          alert('Nemotron configuration saved successfully!');
+          alert('AI Provider settings saved successfully!');
         }
       } catch (e) {
         alert('Failed to save settings: ' + e);
@@ -857,7 +995,8 @@ def get_dashboard_html() -> str:
           body: JSON.stringify({
             api_key: apiKey,
             base_url: document.getElementById('modal-base-url').value.trim(),
-            model_name: document.getElementById('modal-model-name').value.trim()
+            model_name: document.getElementById('modal-model-name').value.trim(),
+            provider: llmSettings.provider
           })
         });
       }
@@ -868,7 +1007,7 @@ def get_dashboard_html() -> str:
         resBox.classList.remove('hidden');
         if (data.success) {
           resBox.className = 'text-xs p-3 rounded-lg bg-emerald-950/70 border border-emerald-700/70 text-emerald-200 font-semibold';
-          resBox.innerText = `✅ Success! Connected to model '${data.model}' on ${data.base_url}`;
+          resBox.innerText = `✅ Success! Connected to ${data.provider} model '${data.model}' on ${data.base_url}`;
         } else {
           resBox.className = 'text-xs p-3 rounded-lg bg-rose-950/70 border border-rose-700/70 text-rose-200 font-semibold';
           resBox.innerText = `❌ Connection Failed: ${data.message}`;
@@ -921,6 +1060,15 @@ def get_dashboard_html() -> str:
       document.getElementById('avg-confidence-pill').innerText = `Local Confidence: ${Math.round(data.risk_overview.average_confidence * 100)}%`;
       document.getElementById('escalated-count-pill').innerText = `Escalated: ${data.risk_overview.escalated_clauses_count} clauses`;
 
+      // Twisted count pill
+      const twistedPill = document.getElementById('twisted-count-pill');
+      if (data.risk_overview.twisted_clauses_count > 0) {
+        twistedPill.classList.remove('hidden');
+        twistedPill.innerText = `🌀 Twisted Drafting: ${data.risk_overview.twisted_clauses_count}`;
+      } else {
+        twistedPill.classList.add('hidden');
+      }
+
       // Score and Level
       const index = data.risk_overview.legal_risk_index;
       document.getElementById('score-meter').innerText = index;
@@ -972,28 +1120,64 @@ def get_dashboard_html() -> str:
 
         // Source & Confidence Pill
         let sourcePill = '';
-        if (clause.analysis_source === 'NEMOTRON_DEEP_REASONING') {
+        if (clause.analysis_source === 'GEMINI_DEEP_REASONING') {
+          sourcePill = `<span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full badge-gemini">🚀 Gemini Flash-Lite Deep Synthesis</span>`;
+        } else if (clause.analysis_source === 'NEMOTRON_DEEP_REASONING') {
           sourcePill = `<span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full badge-nemotron">🧠 Nemotron Deep Synthesis</span>`;
+        } else if (clause.analysis_source === 'OPENAI_DEEP_REASONING') {
+          sourcePill = `<span class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-slate-700 text-white border border-slate-600">⚡ OpenAI Deep Synthesis</span>`;
         } else {
           sourcePill = `<span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">⚡ ${Math.round(clause.confidence * 100)}% Local Confidence</span>`;
         }
 
-        const trapsHtml = clause.detected_traps.map(t => 
+        // Twisted badge
+        let twistedBadge = '';
+        if (clause.is_twisted) {
+          twistedBadge = `<span class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md badge-twisted">🌀 Twisted Phrasing (${Math.round((clause.obfuscation_score || 0.5) * 100)}% Obfuscation)</span>`;
+        }
+
+        const trapsHtml = (clause.detected_traps || []).map(t => 
           `<span class="inline-block bg-rose-500/25 text-rose-200 border border-rose-500/40 text-[11px] font-bold px-2 py-0.5 rounded-md mr-1 mt-1">⚠️ ${t}</span>`
         ).join('');
 
-        card.className = `glass-card rounded-2xl p-5 sm:p-6 space-y-4 clause-card transition-all ${clause.analysis_source === 'NEMOTRON_DEEP_REASONING' ? 'border-purple-500/40 shadow-lg shadow-purple-950/20' : ''}`;
+        card.className = `glass-card rounded-2xl p-5 sm:p-6 space-y-4 clause-card transition-all ${clause.is_twisted ? 'border-amber-500/40 shadow-lg shadow-amber-950/20' : ''}`;
         card.setAttribute('data-severity', clause.severity);
         card.setAttribute('data-source', clause.analysis_source);
+        card.setAttribute('data-twisted', clause.is_twisted ? 'true' : 'false');
+
+        // Archetypes details if present
+        let archetypeHtml = '';
+        if (clause.semantic_archetype_matches && Object.keys(clause.semantic_archetype_matches).length > 0) {
+          const topMatches = Object.entries(clause.semantic_archetype_matches)
+            .filter(([_, score]) => score > 0.15)
+            .sort((a, b) => b[1] - a[1]);
+          if (topMatches.length > 0) {
+            archetypeHtml = `
+              <div class="mt-2 p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1">
+                <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                  <span>📐</span> Semantic Vector Archetype Overlap:
+                </div>
+                <div class="flex flex-wrap gap-1.5 pt-0.5">
+                  ${topMatches.map(([arch, score]) => `
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700 font-mono">
+                      ${arch.replace(/_/g, ' ')}: <strong class="text-indigo-300">${Math.round(score * 100)}%</strong>
+                    </span>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }
+        }
 
         card.innerHTML = `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2.5">
-              <span class="text-xs font-bold bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-md border border-slate-700">#${clause.id}</span>
-              <h4 class="text-sm sm:text-base font-extrabold text-white">${clause.section_title}</h4>
+              <span class="text-xs font-bold bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-md border border-slate-700 font-mono">#${clause.id}</span>
+              <h4 class="font-display text-sm sm:text-base font-extrabold text-white">${clause.section_title}</h4>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${clause.category.replace('_', ' ')}</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${clause.category.replace(/_/g, ' ')}</span>
+              ${twistedBadge}
               ${severityBadge}
               ${sourcePill}
             </div>
@@ -1002,6 +1186,8 @@ def get_dashboard_html() -> str:
           ${clause.escalation_reason ? `<div class="text-[11px] text-purple-200 bg-purple-950/50 border border-purple-800/60 p-2.5 rounded-lg font-medium">💡 ${clause.escalation_reason}</div>` : ''}
 
           ${trapsHtml ? `<div class="pt-0.5">${trapsHtml}</div>` : ''}
+
+          ${archetypeHtml}
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <div class="space-y-2.5">
@@ -1036,10 +1222,15 @@ def get_dashboard_html() -> str:
       cards.forEach(c => {
         const sev = c.getAttribute('data-severity');
         const src = c.getAttribute('data-source');
+        const isTwisted = c.getAttribute('data-twisted') === 'true';
+
         if (level === 'ALL') {
           c.classList.remove('hidden');
+        } else if (level === 'TWISTED') {
+          if (isTwisted) c.classList.remove('hidden');
+          else c.classList.add('hidden');
         } else if (level === 'ESCALATED') {
-          if (src === 'NEMOTRON_DEEP_REASONING') c.classList.remove('hidden');
+          if (src && src.includes('DEEP_REASONING')) c.classList.remove('hidden');
           else c.classList.add('hidden');
         } else if (level === 'HIGH') {
           if (sev === 'HIGH' || sev === 'CRITICAL') c.classList.remove('hidden');
@@ -1063,7 +1254,7 @@ def get_dashboard_html() -> str:
           <div class="flex items-center gap-2">
             <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Question ${i + 1}: ${q.category}</span>
           </div>
-          <p class="text-xs sm:text-sm font-extrabold text-white leading-snug">"${q.question}"</p>
+          <p class="font-display text-xs sm:text-sm font-extrabold text-white leading-snug">"${q.question}"</p>
           <p class="text-xs text-slate-200"><strong>Why It Matters:</strong> ${q.why_it_matters}</p>
           <div class="text-xs text-indigo-100 bg-indigo-950/40 p-2.5 rounded-lg border border-indigo-900/50 font-mono">
             <strong>Recommended Redline:</strong> ${q.recommended_fallback}
@@ -1190,7 +1381,7 @@ def get_dashboard_html() -> str:
 
         card.innerHTML = `
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h4 class="text-sm font-extrabold text-white">${diff.section_title}</h4>
+            <h4 class="font-display text-sm font-extrabold text-white">${diff.section_title}</h4>
             <div class="flex items-center gap-2">
               <span class="text-xs text-slate-400 font-semibold">${diff.category}</span>
               ${typeBadge}
