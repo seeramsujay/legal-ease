@@ -1,7 +1,8 @@
 """
 Core end-to-end analysis pipeline orchestrator.
 Sequences PII anonymization, clause segmentation, local risk heuristics,
-confidence evaluation, and optional Nemotron LLM escalation routing.
+semantic vector archetype matching, obfuscation detection, confidence evaluation,
+and optional LLM escalation routing (Gemini Flash Lite, Nemotron, OpenAI).
 """
 
 from datetime import datetime, timezone
@@ -26,7 +27,7 @@ class LegalAnalysisPipeline:
     """
     Orchestrates the multi-stage legal document comprehension pipeline.
     Ensures zero PII leakage by anonymizing identifiers before linguistic analysis.
-    Applies local-first verification with confidence-based Nemotron LLM escalation.
+    Applies local-first verification with confidence-based LLM escalation.
     """
 
     def __init__(self, llm_client: Optional[NemotronClient] = None):
@@ -41,7 +42,7 @@ class LegalAnalysisPipeline:
         self, raw_text: str, document_title: Optional[str] = None
     ) -> ContractAnalysisResponse:
         """
-        Asynchronously execute full legal analysis with Nemotron escalation on low confidence.
+        Asynchronously execute full legal analysis with LLM escalation on low confidence or twisted drafting.
         """
         doc_id = str(uuid.uuid4())[:8]
         clean_text = sanitize_input_text(raw_text)
@@ -56,7 +57,7 @@ class LegalAnalysisPipeline:
         # Step 2: Clause Segmentation (using anonymized text for privacy)
         raw_clauses = self.segmenter.segment(anon_result.redacted_text)
 
-        # Step 3: Local Risk Evaluation & Confidence Scoring
+        # Step 3: Local Risk Evaluation, Semantic Vector Matching & Confidence Scoring
         clause_evaluations = []
         analyzed_clauses = []
         escalated_count = 0
@@ -65,13 +66,13 @@ class LegalAnalysisPipeline:
             eval_res = self.risk_analyzer.evaluate_clause(c)
             clause_evaluations.append(eval_res)
 
-            # Check if local confidence is below threshold AND Nemotron is configured
+            # Check if local confidence is below threshold AND LLM is configured
             is_low_confidence = eval_res.confidence < self.llm_client.config.confidence_threshold
             can_escalate = self.llm_client.is_configured() and is_low_confidence
 
             deep_data = None
             if can_escalate:
-                # Escalate PII-redacted clause to Nemotron
+                # Escalate PII-redacted clause to LLM (Gemini Flash Lite / Nemotron / OpenAI)
                 deep_data = await self.llm_client.deep_reason_clause(
                     anonymized_text=c.text,
                     section_title=c.title,
@@ -100,15 +101,21 @@ class LegalAnalysisPipeline:
                     c.category, severity, c.title, c.text, traps
                 )[2]
 
-                analysis_source = "NEMOTRON_DEEP_REASONING"
+                if "gemini" in self.llm_client.config.model_name.lower():
+                    analysis_source = "GEMINI_DEEP_REASONING"
+                elif "openai" in getattr(self.llm_client.config, "provider", "").lower() or "gpt" in self.llm_client.config.model_name.lower():
+                    analysis_source = "OPENAI_DEEP_REASONING"
+                else:
+                    analysis_source = "NEMOTRON_DEEP_REASONING"
+
                 escalation_reason = (
                     f"Local confidence was {int(eval_res.confidence * 100)}% "
                     f"(below {int(self.llm_client.config.confidence_threshold * 100)}% threshold). "
-                    f"Deep reasoning applied via {self.llm_client.config.model_name}."
+                    f"Deep legal reasoning applied via {self.llm_client.config.model_name}."
                 )
                 confidence = 0.95
                 confidence_label = "HIGH"
-                risk_reasons = eval_res.reasons + [f"AI Reasoning: {deep_data.get('reasoning', '')}"]
+                risk_reasons = eval_res.reasons + [f"AI Synthesis: {deep_data.get('reasoning', '')}"]
             else:
                 summary, impact, tip = self.simplifier.simplify(
                     category=c.category,
@@ -147,6 +154,10 @@ class LegalAnalysisPipeline:
                     what_it_means_for_you=impact,
                     negotiation_tip=tip,
                     detected_traps=traps,
+                    is_twisted=eval_res.is_twisted,
+                    obfuscation_score=eval_res.obfuscation_score,
+                    semantic_archetype_matches=eval_res.archetype_scores,
+                    detected_euphemisms=eval_res.detected_euphemisms,
                 )
             )
 
@@ -158,7 +169,7 @@ class LegalAnalysisPipeline:
         elif self.llm_client.is_configured():
             risk_overview.ai_model_used = "Local Shield (100% High Confidence - No LLM Escalation Needed)"
         else:
-            risk_overview.ai_model_used = "Local Privacy Shield & Deterministic Rules"
+            risk_overview.ai_model_used = "Local Privacy Shield & Semantic Heuristics"
 
         # Step 5: Generate Attorney Briefing Checklist
         attorney_checklist = self.checklist_gen.generate(

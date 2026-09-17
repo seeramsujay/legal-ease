@@ -1,16 +1,18 @@
 """
-Deterministic contract risk scoring and exposure assessment engine.
-Evaluates clauses against real-world legal trap heuristics and computes local confidence.
+Deterministic and semantic contract risk scoring and exposure assessment engine.
+Evaluates clauses against real-world legal trap heuristics, computes semantic archetype
+vector similarities, detects twisted / obfuscated phrasing, and calculates local confidence.
 """
 
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 from legal_ease.models import (
     ClauseCategory,
     RiskSeverity,
     RiskOverview,
 )
 from legal_ease.clause_segmenter import RawClause
+from legal_ease.semantic_analyzer import get_semantic_model, SemanticClauseInsight
 
 
 class ClauseRiskEvaluation:
@@ -23,6 +25,10 @@ class ClauseRiskEvaluation:
         confidence: float = 0.95,
         confidence_label: str = "HIGH",
         confidence_reasons: Optional[List[str]] = None,
+        is_twisted: bool = False,
+        obfuscation_score: float = 0.0,
+        archetype_scores: Optional[Dict[str, float]] = None,
+        detected_euphemisms: Optional[List[str]] = None,
     ):
         self.risk_score = risk_score
         self.severity = severity
@@ -31,13 +37,21 @@ class ClauseRiskEvaluation:
         self.confidence = confidence
         self.confidence_label = confidence_label
         self.confidence_reasons = confidence_reasons or []
+        self.is_twisted = is_twisted
+        self.obfuscation_score = obfuscation_score
+        self.archetype_scores = archetype_scores or {}
+        self.detected_euphemisms = detected_euphemisms or []
 
 
 class RiskAnalyzer:
     """
     Evaluates contract clauses using deterministic pattern matching,
-    severity weighing, confidence estimation, and document-wide risk index calculation.
+    semantic vector archetype matching, obfuscation detection,
+    and document-wide risk index calculation.
     """
+
+    def __init__(self):
+        self.semantic_model = get_semantic_model()
 
     def evaluate_clause(self, clause: RawClause) -> ClauseRiskEvaluation:
         """Evaluate a single raw clause and compute its risk score, traps, and confidence."""
@@ -48,17 +62,33 @@ class RiskAnalyzer:
         confidence_reasons: List[str] = []
         confidence = 0.95  # Default high confidence for straightforward clauses
 
+        # --- Semantic Vector & Obfuscation Analysis ---
+        semantic = self.semantic_model.evaluate_semantics(clause.text, clause.title)
+        if semantic.is_twisted:
+            if semantic.detected_euphemisms:
+                traps.append("Twisted / Euphemistic Drafting Trap")
+                reasons.append(
+                    f"Obfuscated Drafting: Sneaky euphemistic terms identified: {', '.join(semantic.detected_euphemisms)}."
+                )
+                score += int(semantic.obfuscation_score * 25)
+            if semantic.escalation_recommended:
+                confidence = min(confidence, 0.66)
+                confidence_reasons.append(
+                    f"Semantic ambiguity & obfuscation detected ({int(semantic.obfuscation_score * 100)}% complexity). "
+                    "Deep AI LLM escalation recommended."
+                )
+
         # 1. Indemnification traps
-        if clause.category == ClauseCategory.INDEMNIFICATION or "indemnif" in text:
+        if clause.category == ClauseCategory.INDEMNIFICATION or "indemnif" in text or "hold harmless" in text:
             has_contractor_indemnifies = bool(
                 re.search(
-                    r"(contractor|consultant|employee|vendor|provider|licensee|user)\s+(shall|agrees to)\s+indemnif",
+                    r"(contractor|consultant|employee|vendor|provider|licensee|user)\s+(shall|agrees to)\s+(?:indemnif|hold\s+harmless)",
                     text,
                 )
             )
             has_client_indemnifies = bool(
                 re.search(
-                    r"(client|company|customer|employer|licensor)\s+(shall|agrees to)\s+indemnif",
+                    r"(client|company|customer|employer|licensor)\s+(shall|agrees to)\s+(?:indemnif|hold\s+harmless)",
                     text,
                 )
             )
@@ -77,12 +107,12 @@ class RiskAnalyzer:
                 traps.append("Unilateral Indemnification Trap")
                 confidence = 0.96
                 confidence_reasons.append("Definitive match: explicit unilateral indemnification structure.")
-            elif "indemnif" in text:
+            elif "indemnif" in text or "hold harmless" in text:
                 score += 25
                 reasons.append("Contains indemnification obligations requiring financial defense.")
                 # If indemnity is mentioned but unclear who indemnifies whom, confidence lowers
                 if not has_contractor_indemnifies and not has_client_indemnifies:
-                    confidence = 0.68
+                    confidence = min(confidence, 0.68)
                     confidence_reasons.append("Ambiguous indemnifying party in clause text.")
 
             if has_attorney_fees:
@@ -277,13 +307,25 @@ class RiskAnalyzer:
             if found_latent:
                 score += 25
                 reasons.append(f"Uncategorized clause contains potential liability triggers: {', '.join(found_latent)}.")
-                confidence = 0.65
+                confidence = min(confidence, 0.65)
                 confidence_reasons.append(
                     f"Unclassified clause with legal risk terminology ({', '.join(found_latent)}). Escalation recommended."
                 )
-            else:
+            elif not semantic.is_twisted:
                 confidence = 0.92
                 confidence_reasons.append("Standard general boilerplate.")
+
+        # 9. Latent Trap Detection from Semantic Archetype Similarity
+        if semantic.top_archetype_similarity >= 0.42 and not traps:
+            arch_name = semantic.top_archetype.replace("_", " ").title()
+            traps.append(f"Disguised {arch_name} Trap")
+            reasons.append(
+                semantic.explanation
+                or f"Semantic vector analysis reveals high mathematical alignment with {arch_name} archetype."
+            )
+            score += 35
+            confidence = min(confidence, 0.67)
+            confidence_reasons.append("Semantic vectors indicate disguised predatory obligations. LLM escalation recommended.")
 
         # Ambiguity check: dense text (>120 words) with borderline score (35-55) and no traps
         word_count = len(text.split())
@@ -320,6 +362,10 @@ class RiskAnalyzer:
             confidence=round(confidence, 2),
             confidence_label=confidence_label,
             confidence_reasons=confidence_reasons,
+            is_twisted=semantic.is_twisted,
+            obfuscation_score=semantic.obfuscation_score,
+            archetype_scores=semantic.archetype_scores,
+            detected_euphemisms=semantic.detected_euphemisms,
         )
 
     def calculate_overview(
@@ -338,12 +384,14 @@ class RiskAnalyzer:
                 executive_summary="No content available to evaluate.",
                 average_confidence=1.0,
                 escalated_clauses_count=0,
+                twisted_clauses_count=0,
             )
 
         total_clauses = len(evaluations)
         high_count = sum(1 for e in evaluations if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL))
         med_count = sum(1 for e in evaluations if e.severity == RiskSeverity.MEDIUM)
         low_count = sum(1 for e in evaluations if e.severity == RiskSeverity.LOW)
+        twisted_count = sum(1 for e in evaluations if getattr(e, "is_twisted", False))
 
         weighted_sum = sum(
             e.risk_score * (2.2 if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL) else 1.0)
@@ -371,6 +419,11 @@ class RiskAnalyzer:
         else:
             critical_findings.append("No critical legal traps detected. Standard contractual language.")
 
+        if twisted_count > 0:
+            critical_findings.append(
+                f"Semantic Obfuscation Alert: {twisted_count} clause(s) exhibit twisted or euphemistic legal phrasing."
+            )
+
         if risk_index >= 75:
             overall_severity = RiskSeverity.HIGH
             exec_summary = (
@@ -389,8 +442,8 @@ class RiskAnalyzer:
         else:
             overall_severity = RiskSeverity.LOW
             exec_summary = (
-                f"LOW RISK AGREEMENT ({risk_index}/100): Balanced contractual terms with {low_count} standard "
-                "provisions. Minimal unilateral risk detected; terms generally conform to industry best practices."
+                f"LOW RISK BALANCED AGREEMENT ({risk_index}/100): Contract appears predominantly bilateral "
+                "and standard. Ensure specific business deliverables and deadlines align with your expectations."
             )
 
         return RiskOverview(
@@ -404,4 +457,5 @@ class RiskAnalyzer:
             executive_summary=exec_summary,
             average_confidence=round(avg_conf, 2),
             escalated_clauses_count=0,
+            twisted_clauses_count=twisted_count,
         )

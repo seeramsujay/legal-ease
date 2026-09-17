@@ -60,6 +60,10 @@ class ClauseAnalysis(BaseModel):
     what_it_means_for_you: str = Field(description="Real-world practical business and personal consequences")
     negotiation_tip: str = Field(description="Actionable redline suggestion to propose to counterparty")
     detected_traps: List[str] = Field(default_factory=list)
+    is_twisted: bool = Field(default=False, description="Whether twisted, euphemistic, or obfuscated drafting was detected")
+    obfuscation_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Semantic ambiguity/obfuscation index (0.0 clear to 1.0 highly disguised)")
+    semantic_archetype_matches: Dict[str, float] = Field(default_factory=dict, description="Cosine similarity matches against predatory contract archetypes")
+    detected_euphemisms: List[str] = Field(default_factory=list, description="Specific deceptive/euphemistic phrases identified")
 
 
 class RiskOverview(BaseModel):
@@ -73,6 +77,7 @@ class RiskOverview(BaseModel):
     executive_summary: str
     average_confidence: float = Field(default=0.92, ge=0.0, le=1.0)
     escalated_clauses_count: int = Field(default=0)
+    twisted_clauses_count: int = Field(default=0, description="Count of clauses with twisted or obfuscated language")
     ai_model_used: Optional[str] = Field(default="Local Rules + Deterministic Heuristics")
 
 
@@ -147,9 +152,34 @@ class ChatResponse(BaseModel):
     model_used: Optional[str] = None
 
 
+class AnonymizeRequest(BaseModel):
+    text: str
+
+
+class AnalyzeRequest(BaseModel):
+    text: str
+    title: Optional[str] = None
+
+
+class CompareRequest(BaseModel):
+    text_v1: str
+    text_v2: str
+    title_v1: Optional[str] = "Version 1"
+    title_v2: Optional[str] = "Version 2"
+
+
 class SampleContract(BaseModel):
     id: str
     title: str
     description: str
     category: str
     content: str
+
+
+class LLMConfigUpdateRequest(BaseModel):
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model_name: Optional[str] = None
+    enabled: Optional[bool] = None
+    confidence_threshold: Optional[float] = None
+    provider: Optional[str] = None  # "gemini", "nemotron", "openai", "custom"
