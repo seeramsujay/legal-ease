@@ -6,6 +6,7 @@
   "scripts": {
     "start": "uv run legal-ease serve",
     "dev": "uv run uvicorn legal_ease.main:app --reload",
+    "build": "echo 'Build ready for deployment'",
     "test": "uv run python -m pytest tests -v",
     "cli": "uv run legal-ease",
     "build:cython": "uv run python setup.py build_ext --inplace"

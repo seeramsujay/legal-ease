@@ -30,9 +30,11 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Node / Frontend
+# Node / Frontend / Vercel
 node_modules/
 .pnpm-store/
+.vercel/
+*.log
 frontend/dist/
 frontend/build/
 frontend/.next/
