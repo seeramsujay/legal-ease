@@ -1,7 +1,7 @@
 """
-Unified LLM client supporting Google Gemini (Flash-Lite / Flash 2.0),
-NVIDIA Nemotron, and OpenAI-compatible endpoints with local-first
-confidence-based escalation routing and environment key auto-detection.
+Unified LLM Client Supporting Google Gemini (Flash-Lite / Flash 2.0),
+NVIDIA Nemotron, and OpenAI-Compatible Endpoints with Local-First
+Confidence-Based Escalation Routing and Environment Key Auto-Detection.
 """
 
 import os
@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger(__name__)
 
 
-def _load_env_file():
+def _load_env_file() -> None:
     """Lightweight .env parser to load local environment configuration without external dependencies."""
     env_paths = [
         Path.cwd() / ".env",
@@ -64,6 +64,7 @@ PROVIDER_PRESETS: Dict[str, Dict[str, Any]] = {
 
 
 class LLMConfig(BaseModel):
+    """Configuration state for remote LLM escalation."""
     api_key: Optional[str] = Field(default=None, description="API Key for the active provider")
     base_url: str = Field(
         default="https://generativelanguage.googleapis.com/v1beta/openai",
@@ -86,13 +87,12 @@ class NemotronClient:
     """
     Unified client for LLM providers (Google Gemini Flash-Lite, NVIDIA Nemotron, OpenAI).
     All data sent through this client MUST be PII-anonymized first.
+    Reuses connection pools and provides zero-crash error boundaries.
     """
 
-    def __init__(self, config: Optional[LLMConfig] = None):
+    def __init__(self, config: Optional[LLMConfig] = None) -> None:
         if config:
             self.config = config
-            # Infer provider only if the model or URL strongly indicates a different provider
-            # and provider wasn't explicitly matched
             if "nemotron" in self.config.model_name.lower():
                 self.config.provider = "nemotron"
             elif "gpt" in self.config.model_name.lower() or (
@@ -103,6 +103,9 @@ class NemotronClient:
                 self.config.provider = "gemini"
         else:
             self.config = self._discover_initial_config()
+
+        # Shared connection limits for high-performance keepalive reuse
+        self._limits = httpx.Limits(max_keepalive_connections=10, max_connections=20)
 
     def _discover_initial_config(self) -> LLMConfig:
         """Automatically detect active API keys from the environment prioritizing Gemini Flash Lite."""
@@ -156,6 +159,7 @@ class NemotronClient:
         )
 
     def is_configured(self) -> bool:
+        """Returns True if a valid API key is present and remote escalation is enabled."""
         return bool(self.config.api_key and self.config.enabled)
 
     def get_status(self) -> Dict[str, Any]:
@@ -165,7 +169,6 @@ class NemotronClient:
             k = self.config.api_key
             masked_key = f"{k[:4]}...{k[-4:]}" if len(k) > 8 else "***"
 
-        # Check if an environment key exists for quick indicator
         env_available_provider = None
         for prov, info in PROVIDER_PRESETS.items():
             for env_var in info["env_vars"]:
@@ -199,7 +202,8 @@ class NemotronClient:
         enabled: Optional[bool] = None,
         confidence_threshold: Optional[float] = None,
         provider: Optional[str] = None,
-    ):
+    ) -> None:
+        """Updates provider and endpoint configuration dynamically at runtime."""
         if provider and provider in PROVIDER_PRESETS:
             preset = PROVIDER_PRESETS[provider]
             self.config.provider = provider
@@ -230,7 +234,7 @@ class NemotronClient:
         if confidence_threshold is not None:
             self.config.confidence_threshold = confidence_threshold
 
-        # If a key exists, auto-enable
+        # If an API key is provided, auto-enable
         if self.config.api_key and enabled is None:
             self.config.enabled = True
 
@@ -253,7 +257,7 @@ class NemotronClient:
         payload = {
             "model": self.config.model_name,
             "messages": [
-                {"role": "system", "content": "Respond with 'OK'."},
+                {"role": "system", "content": "Respond with 'OK'." if not self.config.provider == 'gemini' else "OK"},
                 {"role": "user", "content": "Ping"},
             ],
             "max_tokens": 10,
@@ -261,7 +265,7 @@ class NemotronClient:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=12.0) as client:
+            async with httpx.AsyncClient(timeout=12.0, limits=self._limits) as client:
                 res = await client.post(url, headers=headers, json=payload)
                 if res.status_code == 200:
                     return {
@@ -285,8 +289,8 @@ class NemotronClient:
 
     async def deep_reason_clause(
         self,
-        anonymized_text: str,
-        section_title: str,
+        anonymized_text: Optional[str],
+        section_title: Optional[str],
         local_category: str,
         local_score: int,
         local_traps: List[str],
@@ -299,12 +303,15 @@ class NemotronClient:
         if not self.is_configured():
             return None
 
+        safe_text = str(anonymized_text) if anonymized_text else ""
+        safe_title = str(section_title) if section_title else "Untitled Section"
+
         prompt = f"""You are an expert commercial contract attorney analyzing a specific clause.
 The clause has had all PII and sensitive party names anonymized:
-Section Title: {section_title}
+Section Title: {safe_title}
 Assigned Category: {local_category}
 Clause Text:
-\"\"\"{anonymized_text}\"\"\"
+\"\"\"{safe_text}\"\"\"
 
 Local heuristics scored this clause at {local_score}/100 with potential traps: {', '.join(local_traps) if local_traps else 'None identified'}.
 However, local confidence was low or borderline due to potential obfuscation or complex drafting.
@@ -340,7 +347,7 @@ Respond ONLY with valid JSON.
         }
 
         try:
-            async with httpx.AsyncClient(timeout=25.0) as client:
+            async with httpx.AsyncClient(timeout=25.0, limits=self._limits) as client:
                 res = await client.post(url, headers=headers, json=payload)
                 if res.status_code == 200:
                     data = res.json()
@@ -363,34 +370,41 @@ Respond ONLY with valid JSON.
 
     async def chat_completion(
         self,
-        query: str,
-        anonymized_contract_context: str,
+        query: Optional[str],
+        anonymized_contract_context: Optional[str],
         conversation_history: Optional[List[Dict[str, str]]] = None,
     ) -> Optional[str]:
         """Direct conversational query using active LLM with contract context."""
         if not self.is_configured():
             return None
 
+        safe_query = str(query) if query else ""
+        safe_context = str(anonymized_contract_context)[:6000] if anonymized_contract_context else ""
+
         provider_title = self.config.provider.title()
         system_prompt = f"""You are Legal-Ease, an expert AI legal navigator powered by {provider_title} designed to help freelancers, contractors, and small business owners understand contracts.
 The contract text below has all personal PII anonymized:
 --- CONTRACT CONTEXT ---
-{anonymized_contract_context[:6000]}
+{safe_context}
 --- END CONTEXT ---
 
-Guidelines:
-1. Ground your answers strictly in the clauses provided.
-2. Explain legal jargon in clear plain English.
-3. Highlight risks, hidden traps, and practical consequences.
-4. Suggest concrete redline proposals where appropriate.
-5. End with a reminder that this is educational literacy and not formal legal advice.
+CRITICAL INSTRUCTIONS:
+1. Ground your answers strictly in the contract text provided above.
+2. Cite specific clauses, section titles, and language when answering.
+3. Be candid, direct, and conversational. Highlight hidden risks, unilateral terms, and unfair provisions.
+4. Provide concrete negotiation advice or fallback redline proposals where appropriate.
+5. NEVER pretend to provide formal legal representation or legal advice. Include informational explanations.
 """
-
         messages = [{"role": "system", "content": system_prompt}]
+
+        # Append previous conversation history
         if conversation_history:
-            for msg in conversation_history[-4:]:
-                messages.append(msg)
-        messages.append({"role": "user", "content": query})
+            for msg in conversation_history[-6:]:
+                role = msg.get("role", "user")
+                if role in ("user", "assistant"):
+                    messages.append({"role": role, "content": msg.get("content", "")})
+
+        messages.append({"role": "user", "content": safe_query})
 
         url = f"{self.config.base_url.rstrip('/')}/chat/completions"
         headers = {
@@ -405,16 +419,14 @@ Guidelines:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=30.0, limits=self._limits) as client:
                 res = await client.post(url, headers=headers, json=payload)
                 if res.status_code == 200:
                     data = res.json()
                     return data["choices"][0]["message"]["content"].strip()
-                return None
+                else:
+                    logger.warning(f"Chat completion error {res.status_code}: {res.text[:150]}")
+                    return None
         except Exception as e:
-            logger.error(f"LLM chat error: {e}")
+            logger.error(f"Chat completion call failed: {e}")
             return None
-
-
-# Backward-compatible alias
-LLMClient = NemotronClient

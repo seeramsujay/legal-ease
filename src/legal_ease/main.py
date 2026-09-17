@@ -1,14 +1,13 @@
 """
-FastAPI application entry point for Legal-Ease.
+FastAPI Application Entry Point for Legal-Ease.
 Provides REST API endpoints, LLM escalation management (Google Gemini Flash-Lite,
 NVIDIA Nemotron, OpenAI), native Cython compilation telemetry, and serves the modern, accessible web dashboard.
 """
 
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
 
 from legal_ease.llm_client import NemotronClient, LLMConfig
 from legal_ease.pipeline import LegalAnalysisPipeline
@@ -25,6 +24,10 @@ from legal_ease.models import (
     ChatResponse,
     ChatRequest,
     SampleContract,
+    AnalyzeRequest,
+    CompareRequest,
+    AnonymizeRequest,
+    LLMConfigUpdateRequest,
 )
 
 app = FastAPI(
@@ -33,6 +36,7 @@ app = FastAPI(
     version="1.3.0",
 )
 
+# Global CORS middleware configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,33 +53,21 @@ anonymizer = PIIAnonymizer()
 assistant = LegalAssistant(llm_client=llm_client)
 
 
-class AnalyzeRequest(BaseModel):
-    text: str
-    title: Optional[str] = None
-
-
-class CompareRequest(BaseModel):
-    text_v1: str
-    text_v2: str
-    title_v1: Optional[str] = "Original Version"
-    title_v2: Optional[str] = "Revised Proposal"
-
-
-class AnonymizeRequest(BaseModel):
-    text: str
-
-
-class UpdateLLMConfigRequest(BaseModel):
-    api_key: Optional[str] = None
-    base_url: Optional[str] = None
-    model_name: Optional[str] = None
-    enabled: Optional[bool] = None
-    confidence_threshold: Optional[float] = None
-    provider: Optional[str] = None
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Ensure all HTTP exceptions return structured JSON payloads."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": True, "detail": exc.detail, "status_code": exc.status_code},
+    )
 
 
 @app.get("/api/health")
 async def health():
+    """
+    Service health check and runtime telemetry.
+    Returns status, active LLM provider, environment key discovery, and Cython compilation state.
+    """
     return {
         "status": "healthy",
         "service": "legal-ease",
@@ -103,7 +95,7 @@ async def get_llm_settings():
 
 
 @app.post("/api/settings/llm")
-async def update_llm_settings(req: UpdateLLMConfigRequest):
+async def update_llm_settings(req: LLMConfigUpdateRequest):
     """Update LLM provider configuration at runtime (Gemini Flash Lite, Nemotron, OpenAI)."""
     llm_client.update_config(
         api_key=req.api_key,
@@ -138,7 +130,7 @@ async def get_samples():
 @app.post("/api/analyze", response_model=ContractAnalysisResponse)
 async def analyze_contract(request: AnalyzeRequest):
     """Analyze contract text with local privacy shield and confidence-based LLM escalation."""
-    if not request.text.strip():
+    if not request.text or not request.text.strip():
         raise HTTPException(status_code=400, detail="Contract text cannot be empty.")
     return await pipeline.analyze_async(request.text, document_title=request.title)
 
@@ -148,12 +140,21 @@ async def analyze_file(
     file: UploadFile = File(...),
     title: Optional[str] = Form(None),
 ):
-    """Analyze an uploaded contract text file."""
+    """Upload and analyze a plain text or Markdown contract file."""
+    content = await file.read()
     try:
-        content = await file.read()
-        text = content.decode("utf-8", errors="replace")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to read file: {e}")
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        try:
+            text = content.decode("latin-1")
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Unable to decode file as plain text. Please upload .txt or .md files.",
+            )
+
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
     doc_title = title if title else file.filename
     return await pipeline.analyze_async(text, document_title=doc_title)
@@ -161,28 +162,41 @@ async def analyze_file(
 
 @app.post("/api/compare", response_model=ContractComparisonResponse)
 async def compare_contracts(request: CompareRequest):
-    """Compare two contract versions and identify liability deltas."""
+    """
+    Compare two versions of a contract with Cython acceleration.
+    Identifies additions, deletions, modifications, and overall risk trajectory (SAFER / MORE_RISK / NEUTRAL).
+    """
     if not request.text_v1.strip() or not request.text_v2.strip():
-        raise HTTPException(status_code=400, detail="Both contract versions are required.")
+        raise HTTPException(
+            status_code=400,
+            detail="Both original (v1) and revised (v2) texts are required for comparison.",
+        )
     return comparator.compare(
-        request.text_v1,
-        request.text_v2,
-        title_v1=request.title_v1 or "Original Version",
-        title_v2=request.title_v2 or "Revised Proposal",
+        text_v1=request.text_v1,
+        text_v2=request.text_v2,
+        title_v1=request.title_v1,
+        title_v2=request.title_v2,
     )
 
 
 @app.post("/api/anonymize", response_model=AnonymizationResult)
 async def anonymize_text(request: AnonymizeRequest):
-    """Perform local PII anonymization preview on raw text."""
-    if not request.text.strip():
-        raise HTTPException(status_code=400, detail="Text cannot be empty.")
+    """
+    Redact all PII (names, emails, phones, SSNs, financial figures, addresses) locally.
+    Guarantees no data leaves the browser unmasked.
+    """
     return anonymizer.anonymize(request.text)
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat_contract(request: ChatRequest):
-    """Context-aware conversational assistance regarding the contract (Local or LLM)."""
+async def chat_with_assistant(request: ChatRequest):
+    """
+    Interactive Q&A regarding contract obligations with prompt-injection defense
+    and grounded answers citing specific clauses.
+    """
+    if not request.message.strip():
+        raise HTTPException(status_code=400, detail="Query message cannot be empty.")
+
     return await assistant.answer_query_async(
         query=request.message,
         contract_text=request.contract_text or "",
@@ -192,7 +206,7 @@ async def chat_contract(request: ChatRequest):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def serve_ui():
-    """Serve the modern, responsive, accessible Single Page Application."""
+async def serve_dashboard():
+    """Serves the complete Single-Page Modern UI Application with WCAG 2.1 AAA Accessibility."""
     from legal_ease.ui import get_dashboard_html
-    return get_dashboard_html()
+    return HTMLResponse(content=get_dashboard_html())

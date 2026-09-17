@@ -1,5 +1,5 @@
 """
-Contract diffing and version comparison engine.
+Contract Diffing and Version Comparison Engine.
 Calculates liability deltas, identifies stealth clause alterations,
 and computes overall contractual trajectory (SAFER / MORE_RISK / NEUTRAL).
 Accelerated by native Cython C-extensions when available.
@@ -22,24 +22,37 @@ class ContractComparator:
     Compares two contracts (e.g., Original vs Counter-Proposal),
     aligning clauses by semantic similarity, identifying additions,
     deletions, and modifications, and scoring risk delta.
+    Guarantees null safety and fast Cython-accelerated diff matching.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.segmenter = ClauseSegmenter()
         self.analyzer = RiskAnalyzer()
+
+    def _text_similarity(self, s1: Optional[str], s2: Optional[str]) -> float:
+        """
+        Calculates lexical token similarity between two clause texts using the
+        Cython C-extension (or pure Python fallback).
+        """
+        return compute_similarity(s1, s2)
 
     def compare(
         self,
         text_v1: Optional[str] = None,
         text_v2: Optional[str] = None,
-        title_v1: str = "Original Version",
-        title_v2: str = "Revised Proposal",
+        title_v1: Optional[str] = "Original Version",
+        title_v2: Optional[str] = "Revised Proposal",
         doc_v1_text: Optional[str] = None,
         doc_v2_text: Optional[str] = None,
     ) -> ContractComparisonResponse:
-        """Execute full comparison and trajectory analysis between two drafts."""
+        """
+        Execute full comparison and trajectory analysis between two drafts.
+        Defensively handles missing, None, or empty text.
+        """
         v1 = text_v1 if text_v1 is not None else (doc_v1_text or "")
         v2 = text_v2 if text_v2 is not None else (doc_v2_text or "")
+        t1 = str(title_v1).strip() if title_v1 else "Original Version"
+        t2 = str(title_v2).strip() if title_v2 else "Revised Proposal"
 
         clauses_v1 = self.segmenter.segment(v1)
         clauses_v2 = self.segmenter.segment(v2)
@@ -52,6 +65,7 @@ class ContractComparator:
 
         risk_delta = overview_v2.legal_risk_index - overview_v1.legal_risk_index
 
+        # Evaluate contractual direction: negative delta indicates lower risk (safer)
         if risk_delta <= -8:
             trajectory = "SAFER"
         elif risk_delta >= 8:
@@ -63,16 +77,16 @@ class ContractComparator:
         matched_v2_indices = set()
         summary_of_changes: List[str] = []
 
+        # Compare clauses in v1 against potential matches in v2
         for i, c1 in enumerate(clauses_v1):
             e1 = evals_v1[i]
-            # Find best match in v2
             best_match_idx = None
             best_sim = 0.0
 
             for j, c2 in enumerate(clauses_v2):
                 if j in matched_v2_indices:
                     continue
-                # Calculate similarity via accelerated Cython engine
+                # Calculate similarity via accelerated engine
                 sim = self._text_similarity(c1.text, c2.text)
                 if c1.category == c2.category:
                     sim += 0.25
@@ -118,7 +132,7 @@ class ContractComparator:
             else:
                 # Clause in v1 was removed in v2
                 summary_of_changes.append(
-                    f"Removed '{c1.title}' (was {e1.risk_score} risk points in v1)."
+                    f"Removed '{c1.title}' (Previously scored {e1.risk_score}/100 Risk)."
                 )
                 clause_diffs.append(
                     ClauseDiff(
@@ -130,16 +144,16 @@ class ContractComparator:
                         risk_score_v1=e1.risk_score,
                         risk_score_v2=None,
                         risk_delta=-e1.risk_score,
-                        analysis_notes="Clause was deleted from the revised version.",
+                        analysis_notes="Clause was struck or omitted from revised draft.",
                     )
                 )
 
-        # Catch newly added clauses in v2
+        # Check for newly added clauses in v2
         for j, c2 in enumerate(clauses_v2):
             if j not in matched_v2_indices:
                 e2 = evals_v2[j]
                 summary_of_changes.append(
-                    f"Added new clause '{c2.title}' with risk score of {e2.risk_score}/100."
+                    f"Added new provision '{c2.title}' (Assessed at {e2.risk_score}/100 Risk)."
                 )
                 clause_diffs.append(
                     ClauseDiff(
@@ -151,16 +165,16 @@ class ContractComparator:
                         risk_score_v1=None,
                         risk_score_v2=e2.risk_score,
                         risk_delta=e2.risk_score,
-                        analysis_notes="New clause introduced in the revised version.",
+                        analysis_notes="New clause introduced in revised draft.",
                     )
                 )
 
         if not summary_of_changes:
-            summary_of_changes.append("No significant structural or textual alterations detected.")
+            summary_of_changes.append("Both contract drafts are substantively identical in scope and obligations.")
 
         return ContractComparisonResponse(
-            document_title_v1=title_v1,
-            document_title_v2=title_v2,
+            document_title_v1=t1,
+            document_title_v2=t2,
             disclaimer=get_standard_disclaimer(),
             risk_index_v1=overview_v1.legal_risk_index,
             risk_index_v2=overview_v2.legal_risk_index,
@@ -169,7 +183,3 @@ class ContractComparator:
             summary_of_changes=summary_of_changes,
             clause_diffs=clause_diffs,
         )
-
-    def _text_similarity(self, a: str, b: str) -> float:
-        """High-performance Jaccard similarity via Cython or Python fallback."""
-        return compute_similarity(a, b)

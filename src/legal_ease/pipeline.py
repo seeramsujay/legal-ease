@@ -1,14 +1,13 @@
 """
-Core end-to-end analysis pipeline orchestrator.
-Sequences PII anonymization, clause segmentation, local risk heuristics,
-semantic vector archetype matching, obfuscation detection, confidence evaluation,
+Core End-to-End Analysis Pipeline Orchestrator.
+Sequences local PII anonymization, structural clause segmentation, deterministic risk heuristics,
+semantic vector archetype projection, obfuscation detection, confidence evaluation,
 and optional LLM escalation routing (Gemini Flash Lite, Nemotron, OpenAI).
 """
 
 from datetime import datetime, timezone
 import uuid
-import asyncio
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from legal_ease.models import (
     ContractAnalysisResponse,
     ClauseAnalysis,
@@ -16,8 +15,8 @@ from legal_ease.models import (
 )
 from legal_ease.guardrails import get_standard_disclaimer, sanitize_input_text
 from legal_ease.anonymizer import PIIAnonymizer
-from legal_ease.clause_segmenter import ClauseSegmenter
-from legal_ease.risk_analyzer import RiskAnalyzer
+from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
+from legal_ease.risk_analyzer import RiskAnalyzer, ClauseRiskEvaluation
 from legal_ease.simplifier import PlainEnglishSimplifier
 from legal_ease.checklist_generator import AttorneyChecklistGenerator
 from legal_ease.llm_client import NemotronClient
@@ -30,7 +29,7 @@ class LegalAnalysisPipeline:
     Applies local-first verification with confidence-based LLM escalation.
     """
 
-    def __init__(self, llm_client: Optional[NemotronClient] = None):
+    def __init__(self, llm_client: Optional[NemotronClient] = None) -> None:
         self.anonymizer = PIIAnonymizer()
         self.segmenter = ClauseSegmenter()
         self.risk_analyzer = RiskAnalyzer()
@@ -39,27 +38,30 @@ class LegalAnalysisPipeline:
         self.llm_client = llm_client or NemotronClient()
 
     async def analyze_async(
-        self, raw_text: str, document_title: Optional[str] = None
+        self, raw_text: Optional[str], document_title: Optional[str] = None
     ) -> ContractAnalysisResponse:
         """
-        Asynchronously execute full legal analysis with LLM escalation on low confidence or twisted drafting.
+        Asynchronously executes the full legal analysis with LLM escalation on low confidence or twisted drafting.
+        Guarantees defensive execution against empty, None, or malformed inputs.
         """
         doc_id = str(uuid.uuid4())[:8]
         clean_text = sanitize_input_text(raw_text)
 
         if not document_title:
-            first_line = clean_text.split("\n")[0][:50].strip()
-            document_title = first_line if first_line else "Legal Document"
+            first_line = clean_text.split("\n")[0][:50].strip() if clean_text else ""
+            doc_title = first_line if first_line else "Legal Document"
+        else:
+            doc_title = str(document_title).strip()
 
         # Step 1: Local PII Anonymization (ZERO PII ever leaves client sandbox)
         anon_result = self.anonymizer.anonymize(clean_text)
 
-        # Step 2: Clause Segmentation (using anonymized text for privacy)
-        raw_clauses = self.segmenter.segment(anon_result.redacted_text)
+        # Step 2: Clause Segmentation (using anonymized text for absolute privacy)
+        raw_clauses: List[RawClause] = self.segmenter.segment(anon_result.redacted_text)
 
         # Step 3: Local Risk Evaluation, Semantic Vector Matching & Confidence Scoring
-        clause_evaluations = []
-        analyzed_clauses = []
+        clause_evaluations: List[ClauseRiskEvaluation] = []
+        analyzed_clauses: List[ClauseAnalysis] = []
         escalated_count = 0
 
         for c in raw_clauses:
@@ -70,7 +72,7 @@ class LegalAnalysisPipeline:
             is_low_confidence = eval_res.confidence < self.llm_client.config.confidence_threshold
             can_escalate = self.llm_client.is_configured() and is_low_confidence
 
-            deep_data = None
+            deep_data: Optional[Dict[str, Any]] = None
             if can_escalate:
                 # Escalate PII-redacted clause to LLM (Gemini Flash Lite / Nemotron / OpenAI)
                 deep_data = await self.llm_client.deep_reason_clause(
@@ -118,31 +120,24 @@ class LegalAnalysisPipeline:
                 risk_reasons = eval_res.reasons + [f"AI Synthesis: {deep_data.get('reasoning', '')}"]
             else:
                 summary, impact, tip = self.simplifier.simplify(
-                    category=c.category,
-                    severity=eval_res.severity,
-                    title=c.title,
-                    text=c.text,
-                    traps=eval_res.traps,
+                    c.category, eval_res.severity, c.title, c.text, eval_res.traps
                 )
+                analysis_source = "LOCAL_HEURISTICS"
+                escalation_reason = None
                 risk_score = eval_res.risk_score
                 severity = eval_res.severity
                 traps = eval_res.traps
-                analysis_source = "LOCAL_HEURISTICS"
-                escalation_reason = None
                 confidence = eval_res.confidence
                 confidence_label = eval_res.confidence_label
                 risk_reasons = eval_res.reasons
-
-            # Re-hydrate original text for local clause representation
-            orig_clause_text = self.anonymizer.deanonymize(c.text, anon_result.entities)
 
             analyzed_clauses.append(
                 ClauseAnalysis(
                     id=c.clause_id,
                     section_title=c.title,
                     category=c.category,
-                    original_text=orig_clause_text,
-                    redacted_text=c.text,
+                    original_text=c.text,
+                    redacted_text=c.text,  # Already segmented from anonymized text
                     risk_score=risk_score,
                     severity=severity,
                     confidence=confidence,
@@ -161,45 +156,22 @@ class LegalAnalysisPipeline:
                 )
             )
 
-        # Step 4: Aggregate Document-Level Risk Overview
-        risk_overview = self.risk_analyzer.calculate_overview(clause_evaluations)
-        risk_overview.escalated_clauses_count = escalated_count
-        if escalated_count > 0:
-            risk_overview.ai_model_used = f"Hybrid (Local Shield + {self.llm_client.config.model_name})"
-        elif self.llm_client.is_configured():
-            risk_overview.ai_model_used = "Local Shield (100% High Confidence - No LLM Escalation Needed)"
-        else:
-            risk_overview.ai_model_used = "Local Privacy Shield & Semantic Heuristics"
+        # Step 4: Overall Document Risk Synthesis
+        overview = self.risk_analyzer.calculate_overview(clause_evaluations)
+        overview.escalated_clauses_count = escalated_count
 
-        # Step 5: Generate Attorney Briefing Checklist
-        attorney_checklist = self.checklist_gen.generate(
-            document_title=document_title,
-            risk_overview=risk_overview,
-            clauses=analyzed_clauses,
-        )
+        if self.llm_client.is_configured():
+            overview.ai_model_used = f"Local Privacy Shield + {self.llm_client.config.model_name}"
+
+        # Step 5: Generate Attorney Brief & Checklist
+        attorney_brief = self.checklist_gen.generate(doc_title, overview, analyzed_clauses)
 
         return ContractAnalysisResponse(
             document_id=doc_id,
             disclaimer=get_standard_disclaimer(),
             anonymization=anon_result,
-            risk_overview=risk_overview,
+            risk_overview=overview,
             clauses=analyzed_clauses,
-            attorney_checklist=attorney_checklist,
+            attorney_checklist=attorney_brief,
             analyzed_at=datetime.now(timezone.utc).isoformat(),
         )
-
-    def analyze(self, raw_text: str, document_title: Optional[str] = None) -> ContractAnalysisResponse:
-        """Synchronous wrapper for sync callers and tests."""
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # In an active event loop
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    return pool.submit(
-                        asyncio.run, self.analyze_async(raw_text, document_title)
-                    ).result()
-            else:
-                return loop.run_until_complete(self.analyze_async(raw_text, document_title))
-        except RuntimeError:
-            return asyncio.run(self.analyze_async(raw_text, document_title))

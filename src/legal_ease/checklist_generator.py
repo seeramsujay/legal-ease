@@ -1,9 +1,11 @@
 """
 Attorney Consultation Brief and Negotiation Checklist Generator.
-Prepares structured, high-value questions and exposure summaries for legal counsel.
+Synthesizes contract risk analysis into an actionable, structured briefing document
+with prioritized questions for counsel, statutory exposure warnings, and redline fallback targets.
+Minimizes billed attorney consultation hours by presenting pre-triaged legal findings.
 """
 
-from typing import List
+from typing import List, Optional
 from legal_ease.models import (
     ClauseAnalysis,
     RiskOverview,
@@ -18,29 +20,49 @@ class AttorneyChecklistGenerator:
     """
     Synthesizes clause risk analyses into an actionable, lawyer-ready consultation brief.
     Enables users to walk into a legal consultation prepared, minimizing billed hours.
+    Guarantees null-safe handling and professional formatting.
     """
 
     def generate(
         self,
-        document_title: str,
-        risk_overview: RiskOverview,
-        clauses: List[ClauseAnalysis],
+        document_title: Optional[str],
+        risk_overview: Optional[RiskOverview],
+        clauses: Optional[List[ClauseAnalysis]],
     ) -> AttorneyChecklist:
-        """Generate structured attorney questions and Markdown consultation brief."""
+        """
+        Generate structured attorney questions and Markdown consultation brief.
+        Defensively handles None or empty inputs.
+        """
+        safe_title = str(document_title).strip() if document_title else "Contract Agreement"
+        clause_list = clauses or []
+        overview = risk_overview or RiskOverview(
+            legal_risk_index=0,
+            risk_level=RiskSeverity.LOW,
+            total_clauses=0,
+            high_risk_count=0,
+            medium_risk_count=0,
+            low_risk_count=0,
+            critical_findings=["No clauses analyzed."],
+            executive_summary="Empty analysis.",
+        )
+
         questions: List[AttorneyQuestion] = []
         top_exposures: List[str] = []
         priority_negotiation_items: List[str] = []
 
         # Filter high and critical risk clauses
         high_risk_clauses = [
-            c for c in clauses if c.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
+            c for c in clause_list if c.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
         ]
 
         # 1. Examine High-Risk Clauses for Targeted Attorney Questions
         for clause in high_risk_clauses:
             top_exposures.extend(clause.detected_traps)
 
-            if "indemnif" in clause.section_title.lower() or "indemnif" in clause.original_text.lower():
+            title_lower = clause.section_title.lower()
+            text_lower = clause.original_text.lower()
+
+            if "indemnif" in title_lower or "indemnif" in text_lower:
                 questions.append(
                     AttorneyQuestion(
                         category="Indemnification & Third-Party Claims",
@@ -62,7 +84,7 @@ class AttorneyChecklistGenerator:
                     f"Section '{clause.section_title}': Convert unilateral indemnity to mutual and insert liability cap."
                 )
 
-            if "liability" in clause.section_title.lower() or "liability" in clause.original_text.lower():
+            if "liability" in title_lower or "liability" in text_lower:
                 questions.append(
                     AttorneyQuestion(
                         category="Limitation of Liability",
@@ -83,7 +105,7 @@ class AttorneyChecklistGenerator:
                     f"Section '{clause.section_title}': Establish an equal, mutual aggregate dollar liability cap."
                 )
 
-            if "arbitrat" in clause.section_title.lower() or "dispute" in clause.section_title.lower():
+            if "arbitrat" in title_lower or "dispute" in title_lower:
                 questions.append(
                     AttorneyQuestion(
                         category="Dispute Resolution & Venue",
@@ -104,7 +126,7 @@ class AttorneyChecklistGenerator:
                     f"Section '{clause.section_title}': Insert mediation pre-condition and allow remote virtual hearings."
                 )
 
-            if "terminat" in clause.section_title.lower():
+            if "terminat" in title_lower:
                 questions.append(
                     AttorneyQuestion(
                         category="Termination & Kill Fees",
@@ -121,104 +143,113 @@ class AttorneyChecklistGenerator:
                     )
                 )
                 priority_negotiation_items.append(
-                    f"Section '{clause.section_title}': Add 30-day written notice requirement and payment guarantee for work completed."
+                    f"Section '{clause.section_title}': Require 30-day written termination notice and payment for completed deliverables."
                 )
 
-            if "intellectual" in clause.section_title.lower() or "ip" in clause.section_title.lower():
+            if "intellectual property" in title_lower or "work for hire" in text_lower:
                 questions.append(
                     AttorneyQuestion(
-                        category="Intellectual Property Retention",
+                        category="Intellectual Property & Pre-Existing Tools",
                         related_clause_id=clause.id,
                         question=(
-                            "Does this work-for-hire assignment unintentionally transfer rights to our pre-existing code, tools, and methodologies?"
+                            "Does the assignment language risk transferring rights to our reusable background libraries, design frameworks, or prior code?"
                         ),
                         why_it_matters=(
-                            "Assigning background IP prevents reuse of your own core tools with subsequent clients."
+                            "Broad assignment without background IP exclusions could surrender ownership of your core operational tools."
                         ),
                         recommended_fallback=(
-                            "Carve out 'Background Technology and Pre-Existing Materials', granting client a non-exclusive license only."
+                            "Add explicit Schedule A carve-out for 'Background Materials' with an irrevocable non-exclusive license upon full payment."
                         ),
                     )
                 )
                 priority_negotiation_items.append(
-                    f"Section '{clause.section_title}': Explicitly carve out background IP and tie deliverable ownership to receipt of full payment."
+                    f"Section '{clause.section_title}': Carve out pre-existing background IP and condition transfer on payment."
                 )
 
-        # Fallback question if contract is relatively low risk
+            if "non-compete" in title_lower or "non compete" in text_lower:
+                questions.append(
+                    AttorneyQuestion(
+                        category="Restrictive Covenants & Non-Compete",
+                        related_clause_id=clause.id,
+                        question=(
+                            "Is this post-termination restrictive covenant legally enforceable against an independent contractor in this jurisdiction?"
+                        ),
+                        why_it_matters=(
+                            "Unreasonable non-compete terms restrict future business viability and livelihood."
+                        ),
+                        recommended_fallback=(
+                            "Strike non-compete entirely or narrow non-solicitation strictly to clients directly engaged within 6 months."
+                        ),
+                    )
+                )
+                priority_negotiation_items.append(
+                    f"Section '{clause.section_title}': Strike non-compete covenant and narrow non-solicitation scope."
+                )
+
+        # Baseline fallback question if agreement is generally balanced
         if not questions:
             questions.append(
                 AttorneyQuestion(
-                    category="General Contract Hygiene",
+                    category="General Contract Health Check",
                     related_clause_id=None,
                     question=(
-                        "Are there any jurisdiction-specific implied warranties or statutory compliance terms missing from this agreement?"
+                        "Does this agreement contain any silent gaps—such as missing warranties, vague payment terms, or inadequate force majeure protections?"
                     ),
-                    why_it_matters="Ensures comprehensive protection under local governing statutes.",
-                    recommended_fallback="Standard mutual boilerplate terms.",
+                    why_it_matters="Omitted provisions can create as much legal risk as overreaching terms.",
+                    recommended_fallback="Ensure clear payment milestone definitions and appropriate mutual confidentiality protections.",
                 )
             )
-            priority_negotiation_items.append("Confirm governing law matches preferred local courts.")
-
-        # Deduplicate top exposures
-        unique_exposures = list(dict.fromkeys(top_exposures))
-        if not unique_exposures:
-            unique_exposures = ["Standard contract provisions; no severe unilateral traps identified."]
-
-        # Generate human-readable Markdown Report
-        markdown_lines = [
-            f"# ⚖️ Attorney Consultation Brief: {document_title}",
-            "",
-            f"> **Legal Risk Index:** {risk_overview.legal_risk_index}/100 ({risk_overview.risk_level.value})  ",
-            f"> **Date Generated:** Automated Triage  ",
-            "",
-            "---",
-            "",
-            "## 🚨 Executive Summary of Document Exposures",
-            risk_overview.executive_summary,
-            "",
-            "### Critical Risk Flags Identified:",
-            *[f"- **{flag}**" for flag in risk_overview.critical_findings],
-            "",
-            "---",
-            "",
-            "## 💬 Prepared Questions for Your Attorney Consultation",
-            "*(Take these prioritized questions into your legal review meeting to maximize productivity)*",
-            "",
-        ]
-
-        for i, q in enumerate(questions, 1):
-            markdown_lines.extend(
-                [
-                    f"### {i}. [{q.category}]",
-                    f"**Question for Counsel:** {q.question}",
-                    f"- **Why It Matters:** {q.why_it_matters}",
-                    f"- **Recommended Fallback:** `{q.recommended_fallback}`",
-                    "",
-                ]
+            priority_negotiation_items.append(
+                "Review scope of work (SOW) descriptions to guarantee deliverables and milestone deadlines are strictly objective."
             )
 
-        markdown_lines.extend(
-            [
-                "---",
-                "",
-                "## 📝 Priority Counter-Proposal Checklist (Redlines)",
-                *[f"- [ ] {item}" for item in priority_negotiation_items],
-                "",
-                "---",
-                "",
-                f"> **Notice:** {get_attorney_prep_note()}",
-                f"> ",
-                f"> **Disclaimer:** {get_standard_disclaimer()}",
-            ]
-        )
+        # Build clean Markdown Consultation Brief matching exact test headers
+        md_lines = [
+            f"# ⚖️ Attorney Consultation Brief: {safe_title.upper()}",
+            f"> **Legal-Ease Risk Index:** {overview.legal_risk_index}/100 ({overview.risk_level.value} Exposure)",
+            f"> **Prepared by:** Legal-Ease Automated Triage",
+            "",
+            "## NOTICE FOR COUNSEL",
+            get_attorney_prep_note(),
+            "",
+            "## EXECUTIVE RISK SUMMARY",
+            overview.executive_summary,
+            "",
+            "## CRITICAL EXPOSURE FINDINGS",
+        ]
+        for f in overview.critical_findings:
+            md_lines.append(f"- {f}")
 
-        markdown_report = "\n".join(markdown_lines)
+        md_lines.extend([
+            "",
+            "## RECOMMENDED QUESTIONS FOR LEGAL COUNSEL",
+        ])
+        for idx, q in enumerate(questions, 1):
+            clause_ref = f" *(Originating Clause #{q.related_clause_id})*" if q.related_clause_id else ""
+            md_lines.extend([
+                f"### {idx}. [{q.category}]{clause_ref}",
+                f"**Question:** {q.question}",
+                f"**Why It Matters:** {q.why_it_matters}",
+                f"**Suggested Fallback/Redline:** `{q.recommended_fallback}`",
+                "",
+            ])
+
+        md_lines.extend([
+            "## PRIORITY COUNTER-PROPOSAL NEGOTIATION CHECKLIST",
+        ])
+        for item in priority_negotiation_items:
+            md_lines.append(f"- [ ] {item}")
+
+        md_lines.extend([
+            "",
+            "---",
+            f"*{get_standard_disclaimer()}*",
+        ])
 
         return AttorneyChecklist(
-            document_title=document_title,
-            overall_risk_index=risk_overview.legal_risk_index,
-            top_exposures=unique_exposures,
+            document_title=safe_title,
+            overall_risk_index=overview.legal_risk_index,
             questions_for_counsel=questions,
             priority_negotiation_items=priority_negotiation_items,
-            markdown_report=markdown_report,
+            markdown_report="\n".join(md_lines),
         )
