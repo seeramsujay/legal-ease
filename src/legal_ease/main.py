@@ -1,7 +1,7 @@
 """
 FastAPI application entry point for Legal-Ease.
-Provides REST API endpoints, Nemotron LLM escalation management,
-native Cython compilation telemetry, and serves the modern, accessible web dashboard.
+Provides REST API endpoints, LLM escalation management (Google Gemini Flash-Lite,
+NVIDIA Nemotron, OpenAI), native Cython compilation telemetry, and serves the modern, accessible web dashboard.
 """
 
 from typing import Optional, List, Dict, Any
@@ -29,8 +29,8 @@ from legal_ease.models import (
 
 app = FastAPI(
     title="Legal-Ease API",
-    description="Privacy-First AI Legal Navigator & Contract Risk Analyzer (Powered by Local Shield + Nemotron + Cython)",
-    version="1.2.0",
+    description="Privacy-First AI Legal Navigator & Contract Risk Analyzer (Powered by Local Shield + Gemini Flash-Lite / Nemotron + Cython)",
+    version="1.3.0",
 )
 
 app.add_middleware(
@@ -71,6 +71,7 @@ class UpdateLLMConfigRequest(BaseModel):
     model_name: Optional[str] = None
     enabled: Optional[bool] = None
     confidence_threshold: Optional[float] = None
+    provider: Optional[str] = None
 
 
 @app.get("/api/health")
@@ -78,8 +79,11 @@ async def health():
     return {
         "status": "healthy",
         "service": "legal-ease",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "vertical": "AI for Legal Assistance & Access",
+        "provider": llm_client.config.provider,
+        "llm_configured": llm_client.is_configured(),
+        "api_key_source": llm_client.config.api_key_source,
         "nemotron_configured": llm_client.is_configured(),
         "model": llm_client.config.model_name,
         "cython_accelerated": is_cython_accelerated(),
@@ -89,38 +93,38 @@ async def health():
 
 @app.get("/api/settings/llm")
 async def get_llm_settings():
-    """Retrieve current LLM configuration with masked API key."""
-    masked_key = None
-    if llm_client.config.api_key:
-        k = llm_client.config.api_key
-        masked_key = f"{k[:4]}...{k[-4:]}" if len(k) > 8 else "***"
-    return {
-        "api_key_configured": bool(llm_client.config.api_key),
-        "masked_api_key": masked_key,
-        "base_url": llm_client.config.base_url,
-        "model_name": llm_client.config.model_name,
-        "enabled": llm_client.config.enabled,
-        "confidence_threshold": llm_client.config.confidence_threshold,
-        "cython_active": is_cython_accelerated(),
-    }
+    """Retrieve current LLM configuration, provider presets, and environment key status."""
+    status = llm_client.get_status()
+    # Backwards-compatible aliases for frontend
+    status["api_key_configured"] = status["configured"]
+    status["masked_api_key"] = status["masked_key"]
+    status["cython_active"] = is_cython_accelerated()
+    return status
 
 
 @app.post("/api/settings/llm")
 async def update_llm_settings(req: UpdateLLMConfigRequest):
-    """Update OpenAI-compatible / Nemotron configuration at runtime."""
+    """Update LLM provider configuration at runtime (Gemini Flash Lite, Nemotron, OpenAI)."""
     llm_client.update_config(
         api_key=req.api_key,
         base_url=req.base_url,
         model_name=req.model_name,
         enabled=req.enabled,
         confidence_threshold=req.confidence_threshold,
+        provider=req.provider,
     )
-    return {"status": "updated", "configured": llm_client.is_configured()}
+    return {
+        "status": "updated",
+        "configured": llm_client.is_configured(),
+        "provider": llm_client.config.provider,
+        "model_name": llm_client.config.model_name,
+        "api_key_source": llm_client.config.api_key_source,
+    }
 
 
 @app.post("/api/settings/test")
 async def test_llm_connection():
-    """Test connection to Nemotron / OpenAI-compatible endpoint."""
+    """Test connection to the active LLM endpoint."""
     res = await llm_client.test_connection()
     return res
 
@@ -133,7 +137,7 @@ async def get_samples():
 
 @app.post("/api/analyze", response_model=ContractAnalysisResponse)
 async def analyze_contract(request: AnalyzeRequest):
-    """Analyze contract text with local privacy shield and confidence-based Nemotron escalation."""
+    """Analyze contract text with local privacy shield and confidence-based LLM escalation."""
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Contract text cannot be empty.")
     return await pipeline.analyze_async(request.text, document_title=request.title)
@@ -178,7 +182,7 @@ async def anonymize_text(request: AnonymizeRequest):
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_contract(request: ChatRequest):
-    """Context-aware conversational assistance regarding the contract (Local or Nemotron)."""
+    """Context-aware conversational assistance regarding the contract (Local or LLM)."""
     return await assistant.answer_query_async(
         query=request.message,
         contract_text=request.contract_text or "",
