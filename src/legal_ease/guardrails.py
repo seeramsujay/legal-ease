@@ -1,9 +1,11 @@
 """
-Legal disclaimers, input sanitization, and guardrail enforcement.
+Legal Disclaimers, Input Sanitization, and Security Guardrails.
+Enforces non-advisory legal disclosures, strips potential script injections,
+and protects conversational endpoints from prompt injection attacks.
 """
 
 import re
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 STANDARD_LEGAL_DISCLAIMER = (
     "LEGAL DISCLAIMER: Legal-Ease is an AI-powered document literacy and analysis tool "
@@ -20,56 +22,82 @@ ATTORNEY_PREP_NOTE = (
     "by licensed legal counsel against applicable governing statutes."
 )
 
+# Pre-compiled high-speed regex union for prompt injection and jailbreak attempts.
+# Matching via a single compiled DFA pattern avoids multiple linear searches.
+_INJECTION_PATTERN = re.compile(
+    r"(?:"
+    r"ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions|"
+    r"disregard\s+(?:all\s+)?guidelines|"
+    r"you\s+are\s+now\s+a\s+licensed\s+attorney|"
+    r"provide\s+binding\s+legal\s+advice|"
+    r"bypass\s+(?:all\s+)?safety\s+filters"
+    r")",
+    re.IGNORECASE,
+)
+
 
 def get_standard_disclaimer() -> str:
-    """Return the formal legal disclaimer."""
+    """Return the mandatory non-advisory legal disclaimer string."""
     return STANDARD_LEGAL_DISCLAIMER
 
 
 def get_attorney_prep_note() -> str:
-    """Return the attorney prep notice."""
+    """Return the professional triage note for reviewing legal counsel."""
     return ATTORNEY_PREP_NOTE
 
 
-def sanitize_input_text(text: str) -> str:
+def sanitize_input_text(text: Optional[str]) -> str:
     """
-    Sanitize input text against dangerous script injections and null bytes.
+    Defensively sanitizes input contract text.
+    - Strips dangerous null bytes (\x00).
+    - Normalizes Windows and classic Mac line endings (\r\n -> \n, \r -> \n).
+    - Caps excessive length to 500,000 characters (~100 pages) to guard memory.
+    - Prevents NoneType errors by converting None or non-string inputs safely.
     """
     if not text:
         return ""
-    # Strip null bytes
+    if not isinstance(text, str):
+        text = str(text)
+
+    # Strip null bytes that can cause C-library string termination errors
     cleaned = text.replace("\x00", "")
-    # Normalize excessive carriage returns
+    
+    # Normalize CRLF and CR to LF
     cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
-    # Limit max contract length to 500,000 characters (~100 pages) for safe memory usage
+    
+    # Enforce safe upper bound on input length (approx 100 pages of text)
     if len(cleaned) > 500000:
         cleaned = cleaned[:500000]
+        
     return cleaned.strip()
 
 
-def validate_chat_query(query: str) -> Dict[str, Any]:
+def validate_chat_query(query: Optional[str]) -> Dict[str, Any]:
     """
-    Check chat query for prompt injections or adversarial attempts to bypass disclaimers.
+    Validates user chat queries against adversarial prompt injection attempts.
+    Returns a dictionary with 'valid': bool, and either 'sanitized_query' or 'reason'.
     """
-    cleaned_query = query.strip()
+    if not query:
+        return {
+            "valid": False,
+            "reason": "Query cannot be empty. Please ask a specific question about your contract.",
+        }
+        
+    cleaned_query = str(query).strip()
     if not cleaned_query:
-        return {"valid": False, "reason": "Query cannot be empty."}
+        return {
+            "valid": False,
+            "reason": "Query cannot be empty. Please ask a specific question about your contract.",
+        }
 
-    # Detect blatant system prompt overrides
-    injection_patterns = [
-        r"ignore\s+(all\s+)?(previous|prior)\s+instructions",
-        r"disregard\s+(all\s+)?guidelines",
-        r"you\s+are\s+now\s+a\s+licensed\s+attorney",
-        r"provide\s+binding\s+legal\s+advice",
-    ]
-    for pattern in injection_patterns:
-        if re.search(pattern, cleaned_query, re.IGNORECASE):
-            return {
-                "valid": False,
-                "reason": (
-                    "Legal-Ease cannot disregard safety guidelines or act as formal legal counsel. "
-                    "Please ask specific informational questions about your contract clauses."
-                ),
-            }
+    # Evaluate against pre-compiled injection union
+    if _INJECTION_PATTERN.search(cleaned_query):
+        return {
+            "valid": False,
+            "reason": (
+                "Legal-Ease cannot disregard safety guidelines or act as formal legal counsel. "
+                "Please ask specific informational questions about your contract clauses."
+            ),
+        }
 
     return {"valid": True, "sanitized_query": cleaned_query}

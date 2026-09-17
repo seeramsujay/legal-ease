@@ -1,18 +1,19 @@
 """
 Intelligent Semantic Vector & Obfuscation Analysis Engine.
 Detects twisted, euphemistic, or obfuscated legal language by projecting clauses
-into high-dimensional semantic archetype vector spaces and computing cosine similarities.
-Flags clauses disguised by predatory drafting to trigger LLM escalation.
+into high-dimensional sub-word n-gram vector spaces and computing cosine similarities
+against predatory legal archetypes. Flags clauses disguised by deceptive drafting
+to trigger automated LLM escalation.
 """
 
 import math
 import re
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Pattern, Any
 from pydantic import BaseModel, Field
 
 
 class SemanticArchetype:
-    """Archetype definitions representing core predatory contract strategies."""
+    """Canonical archetype identifiers representing predatory contract strategies."""
     UNILATERAL_INDEMNITY = "unilateral_indemnity"
     ASYMMETRIC_LIABILITY = "asymmetric_liability"
     STEALTH_NON_COMPETE = "stealth_non_compete"
@@ -23,6 +24,7 @@ class SemanticArchetype:
     EUPHEMISTIC_BOILERPLATE_TRAP = "euphemistic_boilerplate_trap"
 
 
+# Comprehensive legal reference corpora representing predatory contract strategies.
 ARCHETYPE_DESCRIPTIONS: Dict[str, str] = {
     SemanticArchetype.UNILATERAL_INDEMNITY: (
         "hold harmless defend and insulate counterparty from any and all claims liabilities losses "
@@ -62,8 +64,9 @@ ARCHETYPE_DESCRIPTIONS: Dict[str, str] = {
     ),
 }
 
-# Twisted / euphemistic phrasing markers used by deceptive contract drafters
-TWISTED_EUPHEMISMS = [
+# Pre-compiled regex patterns for deceptive euphemisms used by predatory drafters.
+# Pre-compilation at module import achieves O(1) regex construction overhead.
+_EUPHEMISM_DEFINITIONS: List[Tuple[str, str, float]] = [
     (r"hold\s+harmless\s+(?:and\s+defend\s+)?(?:\w+\s+)*(?:from|against|without\s+limitation)", "Euphemistic Indemnity Shield", 0.45),
     (r"at\s+(?:its|company's?|client's?)\s+(?:sole|unreviewable|absolute)\s+(?:prerogative|discretion|determination)", "Unreviewable Discretion", 0.40),
     (r"without\s+necessity\s+of\s+(?:prior\s+notice|cause|demonstrating\s+breach)", "Zero-Notice Deprivation", 0.40),
@@ -78,13 +81,28 @@ TWISTED_EUPHEMISMS = [
     (r"survives?\s+the\s+expiration\s+or\s+earlier\s+termination\s+indefinitely", "Indefinite Post-Termination Trap", 0.35),
 ]
 
+# Pre-compiled tuple of (compiled_pattern, label, weight) for maximal search velocity
+COMPILED_EUPHEMISMS: List[Tuple[Pattern[str], str, float]] = [
+    (re.compile(pat, re.IGNORECASE), label, weight)
+    for pat, label, weight in _EUPHEMISM_DEFINITIONS
+]
+
+# Pre-compiled tokenizers and syntactic complexity splitters
+_WORD_TOKEN_PATTERN = re.compile(r"\b[a-z]{3,}\b")
+_SENTENCE_SPLIT_PATTERN = re.compile(r"[.;:]+")
+_NESTING_PATTERN = re.compile(
+    r"(?:provided\s+(?:however|that)|notwithstanding\s+the\s+foregoing|in\s+the\s+event\s+that)",
+    re.IGNORECASE,
+)
+
 
 class SemanticClauseInsight(BaseModel):
+    """Linguistic and vector-space telemetry resulting from semantic analysis."""
     is_twisted: bool = Field(default=False, description="Whether twisted or euphemistic drafting was detected")
     obfuscation_score: float = Field(default=0.0, description="Obfuscation / complexity index from 0.0 (clear) to 1.0 (heavily disguised)")
     archetype_scores: Dict[str, float] = Field(default_factory=dict, description="Cosine similarity to each trap archetype")
     top_archetype: Optional[str] = Field(default=None, description="Dominant predatory archetype detected")
-    top_archetype_similarity: float = Field(default=0.0)
+    top_archetype_similarity: float = Field(default=0.0, description="Cosine similarity score of top archetype match")
     detected_euphemisms: List[str] = Field(default_factory=list, description="Specific euphemistic deceptive phrases detected")
     escalation_recommended: bool = Field(default=False, description="Whether complexity and obfuscation mandate LLM escalation")
     explanation: Optional[str] = Field(default=None, description="Detailed explanation of the linguistic disguise")
@@ -92,82 +110,110 @@ class SemanticClauseInsight(BaseModel):
 
 class SemanticVectorModel:
     """
-    Sub-word n-gram & term frequency vector space model for legal contract semantics.
-    Computes dense cosine similarity between incoming clause text and reference archetype vectors.
+    High-Performance Sub-word N-gram & Term Frequency Vector Space Model.
+    
+    Mathematical Formulation:
+    - Normalizes token sequences and extracts sub-word 4-gram and 5-gram roots.
+    - Computes L2-normalized vector representations: v_norm = v / ||v||_2.
+    - Evaluates Cosine Similarity via inner product: sim(u, v) = u . v.
+    - Benchmarks incoming clauses against pre-indexed predatory legal archetypes in O(|tokens|) time.
     """
 
-    def __init__(self):
-        # Precompute archetype vectors
+    def __init__(self) -> None:
+        # Precompute archetype vectors once during singleton initialization
         self.archetype_vectors: Dict[str, Dict[str, float]] = {}
         for name, text in ARCHETYPE_DESCRIPTIONS.items():
             self.archetype_vectors[name] = self._vectorize(text)
 
-    def _tokenize(self, text: str) -> List[str]:
-        # Normalize and split on non-alphanumeric
-        words = re.findall(r"\b[a-z]{3,}\b", text.lower())
-        # Generate word tokens + character 4-grams for sub-word root matching (e.g. "indemn", "arbitr")
-        tokens = list(words)
+    def _tokenize(self, text: Optional[str]) -> List[str]:
+        """
+        Extracts lowercase words and appends character 4-gram and 5-gram stems.
+        Enables robust matching against morphological variations (e.g. 'indemnif' -> 'indemn', 'indem').
+        """
+        if not text:
+            return []
+            
+        words = _WORD_TOKEN_PATTERN.findall(text.lower())
+        tokens: List[str] = list(words)
+        
         for w in words:
-            if len(w) >= 5:
+            w_len = len(w)
+            if w_len >= 5:
                 tokens.append(w[:4])
                 tokens.append(w[:5])
         return tokens
 
-    def _vectorize(self, text: str) -> Dict[str, float]:
+    def _vectorize(self, text: Optional[str]) -> Dict[str, float]:
+        """
+        Transforms text into an L2-normalized sparse vector mapping token -> weight.
+        Guarantees ||v||_2 = 1.0 for non-empty vectors.
+        """
         tokens = self._tokenize(text)
         if not tokens:
             return {}
+            
         counts: Dict[str, int] = {}
         for t in tokens:
             counts[t] = counts.get(t, 0) + 1
 
-        # L2-normalize
+        # Calculate Euclidean (L2) Norm: sqrt(sum(c_i^2))
         sq_sum = sum(c * c for c in counts.values())
         norm = math.sqrt(sq_sum) if sq_sum > 0 else 1.0
-        return {t: c / norm for t, c in counts.items()}
+        
+        return {t: float(c) / norm for t, c in counts.items()}
 
     def cosine_similarity(self, vec1: Dict[str, float], vec2: Dict[str, float]) -> float:
+        """
+        Computes cosine similarity between two L2-normalized sparse vectors.
+        Optimized to iterate over the smaller vector for minimal dictionary lookups.
+        """
         if not vec1 or not vec2:
             return 0.0
-        # Iterate over smaller vector for performance
+            
+        # Swap so vec1 is always the smaller map to minimize loop iterations
         if len(vec1) > len(vec2):
             vec1, vec2 = vec2, vec1
+            
         dot_product = sum(weight * vec2.get(token, 0.0) for token, weight in vec1.items())
         return max(0.0, min(1.0, dot_product))
 
-    def evaluate_semantics(self, text: str, section_title: str = "") -> SemanticClauseInsight:
-        full_text = f"{section_title} {text}".lower()
+    def evaluate_semantics(self, text: Optional[str], section_title: Optional[str] = "") -> SemanticClauseInsight:
+        """
+        Evaluates a contract clause for predatory semantics, euphemistic drafting, and obfuscation.
+        Returns detailed insight including archetype similarities and escalation flags.
+        """
+        safe_text = str(text) if text is not None else ""
+        safe_title = str(section_title) if section_title is not None else ""
+        
+        full_text = f"{safe_title} {safe_text}".lower()
         clause_vec = self._vectorize(full_text)
 
-        # 1. Compute cosine similarity against all archetype vectors
+        # 1. Cosine similarity against all predatory archetypes
         archetype_scores: Dict[str, float] = {}
-        top_archetype = None
-        top_sim = 0.0
+        top_archetype: Optional[str] = None
+        top_sim: float = 0.0
 
         for name, arch_vec in self.archetype_vectors.items():
             sim = self.cosine_similarity(clause_vec, arch_vec)
-            # Store rounded score
-            archetype_scores[name] = round(sim, 3)
+            rounded_sim = round(sim, 3)
+            archetype_scores[name] = rounded_sim
             if sim > top_sim:
                 top_sim = sim
                 top_archetype = name
 
-        # 2. Check for deceptive euphemisms
-        detected_euphemisms = []
-        euphemism_weight = 0.0
-        for pattern, label, weight in TWISTED_EUPHEMISMS:
-            if re.search(pattern, full_text):
+        # 2. Match deceptive euphemisms using pre-compiled regex objects
+        detected_euphemisms: List[str] = []
+        euphemism_weight: float = 0.0
+        for compiled_pat, label, weight in COMPILED_EUPHEMISMS:
+            if compiled_pat.search(full_text):
                 detected_euphemisms.append(label)
                 euphemism_weight += weight
 
-        # 3. Structural complexity analysis (syntactic nesting, sentence length)
-        sentences = [s.strip() for s in re.split(r"[.;:]+", text) if s.strip()]
-        avg_sentence_len = (
-            sum(len(s.split()) for s in sentences) / max(1, len(sentences))
-        )
-        has_deep_nesting = bool(
-            re.search(r"provided\s+(?:however|that)|notwithstanding\s+the\s+foregoing|in\s+the\s+event\s+that", full_text)
-        )
+        # 3. Structural complexity analysis
+        sentences = [s.strip() for s in _SENTENCE_SPLIT_PATTERN.split(safe_text) if s.strip()]
+        total_sentences = max(1, len(sentences))
+        avg_sentence_len = sum(len(s.split()) for s in sentences) / total_sentences
+        has_deep_nesting = bool(_NESTING_PATTERN.search(full_text))
 
         complexity_factor = 0.0
         if avg_sentence_len > 35:
@@ -178,7 +224,8 @@ class SemanticVectorModel:
             complexity_factor += 0.15
 
         # 4. Synthesize Obfuscation Score (0.0 to 1.0)
-        # Combines euphemisms + semantic overlap with predatory archetypes + structural complexity
+        # Combines semantic alignment with predatory archetypes (45%),
+        # detected euphemisms (35%), and syntactic complexity (20%)
         raw_obfuscation = (
             (top_sim * 0.45)
             + (min(1.0, euphemism_weight) * 0.35)
@@ -186,7 +233,7 @@ class SemanticVectorModel:
         )
         obfuscation_score = round(max(0.0, min(1.0, raw_obfuscation)), 2)
 
-        # 5. Determine if the clause is twisted
+        # 5. Determine if clause is twisted or deceptive
         is_twisted = (
             len(detected_euphemisms) > 0
             or top_sim >= 0.50
@@ -194,13 +241,12 @@ class SemanticVectorModel:
             or (obfuscation_score >= 0.55)
         )
 
-        # 6. Determine whether to recommend LLM escalation
-        # If words are twisted or semantics indicate a stealth trap with high complexity
+        # 6. LLM escalation recommendation
         escalation_recommended = is_twisted and (
             obfuscation_score >= 0.45 or top_sim >= 0.35
         )
 
-        explanation = None
+        explanation: Optional[str] = None
         if is_twisted:
             archetype_name_clean = (
                 top_archetype.replace("_", " ").title() if top_archetype else "Predatory Term"
@@ -228,9 +274,10 @@ class SemanticVectorModel:
         )
 
 
-# Global singleton instance for rapid reuse across requests
-_semantic_model = SemanticVectorModel()
+# Global singleton instance for high-speed reuse across requests
+_semantic_model: SemanticVectorModel = SemanticVectorModel()
 
 
 def get_semantic_model() -> SemanticVectorModel:
+    """Returns the globally pre-computed and indexed SemanticVectorModel singleton."""
     return _semantic_model
