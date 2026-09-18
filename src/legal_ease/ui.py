@@ -75,13 +75,93 @@ def get_dashboard_html() -> str:
       font-family: var(--font-mono);
     }
 
+    /* Animated Glowing Aurora Accents & Animations */
+    @keyframes float-slow {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-8px) scale(1.02); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    @keyframes shimmer-btn {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+
+    .animate-float {
+      animation: float-slow 6s ease-in-out infinite;
+    }
+    .animate-shimmer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+      transform: translateX(-100%);
+      animation: shimmer-btn 3s infinite;
+    }
+
     /* Glassmorphic panels with accessible contrast */
     .glass-panel {
       background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.65);
+    }
+    .glass-card {
+      background: rgba(22, 31, 48, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      border-color: rgba(129, 140, 248, 0.45);
+      box-shadow: 0 12px 35px -10px rgba(99, 102, 241, 0.20);
+      transform: translateY(-2px);
+    }
+
+    /* SVG Circular Progress Gauge */
+    .gauge-bg {
+      stroke: rgba(51, 65, 85, 0.5);
+      stroke-width: 8;
+    }
+    .gauge-fill {
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease-in-out, stroke 0.5s ease;
+    }
+
+    /* Toast Notification Animation */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast-item {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #f8fafc;
+      padding: 12px 20px;
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.2);
+      backdrop-filter: blur(16px);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideInToast 0.3s ease-out forwards;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    @keyframes slideInToast {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
     .glass-card {
       background: rgba(30, 41, 59, 0.70);
@@ -391,10 +471,24 @@ def get_dashboard_html() -> str:
           </div>
         </div>
 
-        <div class="relative">
-          <label for="contract-input" class="block text-xs font-bold text-slate-300 mb-1">Contract Document Text:</label>
-          <textarea id="contract-input" rows="8" aria-describedby="contract-input-desc" class="w-full font-mono text-xs text-slate-200 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition leading-relaxed" placeholder="Paste your contract, NDA, SOW, or terms of service here..."></textarea>
-          <span id="contract-input-desc" class="sr-only">Input area for contract text. All PII is sanitized locally before analysis.</span>
+        <div class="relative space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label for="contract-input" class="block text-xs font-bold text-slate-300">
+              Contract Document Text:
+            </label>
+            <div class="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+              <span id="input-stats-pill" class="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800">
+                0 words | 0 chars
+              </span>
+              <button type="button" onclick="clearContractInput()" class="text-slate-400 hover:text-rose-400 font-bold transition flex items-center gap-1" title="Clear input">
+                <span>✕</span> Clear
+              </button>
+            </div>
+          </div>
+          <div class="relative group">
+            <textarea id="contract-input" rows="8" aria-describedby="contract-input-desc" oninput="updateInputStats()" class="w-full font-mono text-xs text-slate-200 p-4 rounded-xl bg-slate-900/90 border border-slate-800/90 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition leading-relaxed shadow-inner" placeholder="Paste your contract, NDA, SOW, or terms of service here, or drag & drop a .txt/.md file..."></textarea>
+            <span id="contract-input-desc" class="sr-only">Input area for contract text. All PII is sanitized locally before analysis.</span>
+          </div>
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-4 pt-1">
@@ -409,7 +503,9 @@ def get_dashboard_html() -> str:
             </button>
           </div>
 
-          <button type="button" onclick="runAnalysis()" id="analyze-btn" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99]">
+          <button type="button" onclick="runAnalysis()" id="analyze-btn" class="relative overflow-hidden inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
+            <span class="animate-shimmer pointer-events-none" aria-hidden="true"></span>
+            <span>🚀</span>
             <span>Analyze & Score Hazards</span>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
@@ -455,14 +551,27 @@ def get_dashboard_html() -> str:
         <div class="glass-panel rounded-2xl p-6 shadow-xl space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
             
-            <!-- Risk Gauge with High Contrast -->
-            <div class="flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-800 text-center relative overflow-hidden">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Legal Risk Index</span>
-              <div class="relative flex items-center justify-center my-3" aria-label="Risk Score">
-                <span id="score-meter" class="font-display text-6xl font-black text-white tracking-tight">--</span>
-                <span class="text-xs font-bold text-slate-400 ml-1">/100</span>
+            <!-- Risk Gauge with High Contrast & Circular Radial SVG -->
+            <div class="flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-800 text-center relative overflow-hidden shadow-inner">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Legal Risk Index</span>
+              
+              <div class="relative w-36 h-36 flex items-center justify-center my-2" aria-label="Risk Score Meter">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <!-- Background Track -->
+                  <circle cx="50" cy="50" r="42" class="gauge-bg" fill="none" />
+                  <!-- Progress Arc -->
+                  <circle id="gauge-progress-circle" cx="50" cy="50" r="42" class="gauge-fill" fill="none"
+                    stroke="#10b981" stroke-dasharray="264" stroke-dashoffset="264" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <div class="flex items-baseline">
+                    <span id="score-meter" class="font-display text-4xl sm:text-5xl font-black text-white tracking-tight">--</span>
+                    <span class="text-[11px] font-bold text-slate-400 ml-0.5">/100</span>
+                  </div>
+                </div>
               </div>
-              <span id="score-badge" class="px-3 py-1 text-xs font-extrabold rounded-full badge-high uppercase tracking-wider">
+
+              <span id="score-badge" class="px-3 py-1 text-xs font-extrabold rounded-full badge-high uppercase tracking-wider shadow-sm">
                 EVALUATING
               </span>
             </div>
@@ -499,25 +608,52 @@ def get_dashboard_html() -> str:
           </div>
         </div>
 
-        <!-- Structured Explorer Navigation -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-          <div class="flex space-x-6" role="tablist" aria-label="Results Explorer View">
-            <button role="tab" id="view-clauses-btn" aria-selected="true" onclick="switchAnalysisView('clauses')" class="font-bold text-xs sm:text-sm text-indigo-400 border-b-2 border-indigo-500 pb-2 transition">
-              Clause-by-Clause Translation & Semantic Insights
-            </button>
-            <button role="tab" id="view-checklist-btn" aria-selected="false" onclick="switchAnalysisView('checklist')" class="font-bold text-xs sm:text-sm text-slate-400 hover:text-slate-200 border-b-2 border-transparent pb-2 transition">
-              Attorney Consultation Brief
-            </button>
+        <!-- Structured Explorer Navigation & Instant Search Filter -->
+        <div class="space-y-3 border-b border-slate-800 pb-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex space-x-6" role="tablist" aria-label="Results Explorer View">
+              <button role="tab" id="view-clauses-btn" aria-selected="true" onclick="switchAnalysisView('clauses')" class="font-bold text-xs sm:text-sm text-indigo-400 border-b-2 border-indigo-500 pb-2 transition">
+                Clause-by-Clause Translation & Semantic Insights
+              </button>
+              <button role="tab" id="view-checklist-btn" aria-selected="false" onclick="switchAnalysisView('checklist')" class="font-bold text-xs sm:text-sm text-slate-400 hover:text-slate-200 border-b-2 border-transparent pb-2 transition">
+                Attorney Consultation Brief
+              </button>
+            </div>
+            <!-- Live Search Bar -->
+            <div class="relative min-w-[240px]">
+              <input type="text" id="clause-search-input" oninput="searchClauses(this.value)" placeholder="Search clauses, traps, keywords..." class="w-full text-xs bg-slate-900 text-slate-200 pl-8 pr-3 py-1.5 rounded-lg border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
+              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
           </div>
-          <div class="flex items-center space-x-2 text-xs">
-            <label for="filter-risk" class="text-slate-300 font-bold">Filter Clauses:</label>
-            <select id="filter-risk" onchange="filterClauses(this.value)" class="text-xs rounded-lg border-slate-700 py-1.5 px-3 bg-slate-900 text-slate-200 font-semibold focus:border-indigo-500">
-              <option value="ALL">All Clauses</option>
-              <option value="TWISTED">🌀 Twisted / Euphemistic Only</option>
-              <option value="HIGH">🚨 High Risk Traps Only</option>
-              <option value="ESCALATED">🧠 AI Escalated Only</option>
-              <option value="MEDIUM">⚠️ Moderate Only</option>
-              <option value="LOW">✅ Standard Only</option>
+
+          <!-- Quick Filter Pill Buttons -->
+          <div class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+            <span class="text-slate-400 font-bold mr-1 text-[11px]">Filter:</span>
+            <button type="button" onclick="setFilterChip('ALL')" id="filter-chip-ALL" class="filter-chip px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-[11px] border border-indigo-500 transition">
+              All Clauses
+            </button>
+            <button type="button" onclick="setFilterChip('TWISTED')" id="filter-chip-TWISTED" class="filter-chip px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 hover:bg-slate-700 font-bold text-[11px] border border-slate-700 transition">
+              🌀 Twisted / Euphemisms
+            </button>
+            <button type="button" onclick="setFilterChip('HIGH')" id="filter-chip-HIGH" class="filter-chip px-2.5 py-1 rounded-lg bg-slate-800 text-rose-300 hover:bg-slate-700 font-bold text-[11px] border border-slate-700 transition">
+              🚨 High Risk Traps
+            </button>
+            <button type="button" onclick="setFilterChip('ESCALATED')" id="filter-chip-ESCALATED" class="filter-chip px-2.5 py-1 rounded-lg bg-slate-800 text-purple-300 hover:bg-slate-700 font-bold text-[11px] border border-slate-700 transition">
+              🧠 AI Escalated
+            </button>
+            <button type="button" onclick="setFilterChip('MEDIUM')" id="filter-chip-MEDIUM" class="filter-chip px-2.5 py-1 rounded-lg bg-slate-800 text-amber-200 hover:bg-slate-700 font-bold text-[11px] border border-slate-700 transition">
+              ⚠️ Moderate
+            </button>
+            <button type="button" onclick="setFilterChip('LOW')" id="filter-chip-LOW" class="filter-chip px-2.5 py-1 rounded-lg bg-slate-800 text-emerald-300 hover:bg-slate-700 font-bold text-[11px] border border-slate-700 transition">
+              ✅ Standard
+            </button>
+            <select id="filter-risk" onchange="filterClauses(this.value)" class="sr-only">
+              <option value="ALL">All</option>
+              <option value="TWISTED">Twisted</option>
+              <option value="HIGH">High</option>
+              <option value="ESCALATED">Escalated</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
             </select>
           </div>
         </div>
@@ -1077,7 +1213,7 @@ def get_dashboard_html() -> str:
       llmSettings.provider = provKey;
     }
 
-    // Accessible Tab Switcher (WCAG Tablist)
+    // Accessible Tab Switcher (WCAG Tablist with Glowing Indicators)
     function switchTab(tabName) {
       const tabs = ['analyzer', 'comparator', 'chat', 'privacy', 'details'];
       tabs.forEach(t => {
@@ -1087,13 +1223,13 @@ def get_dashboard_html() -> str:
           section.classList.remove('hidden');
           navBtn.setAttribute('aria-selected', 'true');
           navBtn.setAttribute('tabindex', '0');
-          navBtn.classList.add('border-indigo-500', 'text-indigo-400');
+          navBtn.classList.add('border-indigo-500', 'text-indigo-300', 'bg-indigo-500/10', 'rounded-t-lg');
           navBtn.classList.remove('border-transparent', 'text-slate-400');
         } else {
           section.classList.add('hidden');
           navBtn.setAttribute('aria-selected', 'false');
           navBtn.setAttribute('tabindex', '-1');
-          navBtn.classList.remove('border-indigo-500', 'text-indigo-400');
+          navBtn.classList.remove('border-indigo-500', 'text-indigo-300', 'bg-indigo-500/10', 'rounded-t-lg');
           navBtn.classList.add('border-transparent', 'text-slate-400');
         }
       });
@@ -1127,6 +1263,130 @@ def get_dashboard_html() -> str:
       }
     }
 
+    // Floating Toast Notification System
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast-item';
+      let icon = 'ℹ️';
+      if (type === 'success') icon = '✅';
+      if (type === 'error') icon = '🚨';
+      if (type === 'copied') icon = '📋';
+      toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // Input Stats Pill Updater
+    function updateInputStats() {
+      const input = document.getElementById('contract-input');
+      const pill = document.getElementById('input-stats-pill');
+      if (!input || !pill) return;
+      const text = input.value.trim();
+      const words = text ? text.split(\' \').filter(w => w.length > 0).length : 0;
+      const chars = input.value.length;
+      pill.innerText = `${words.toLocaleString()} words | ${chars.toLocaleString()} chars`;
+    }
+
+    function clearContractInput() {
+      const input = document.getElementById('contract-input');
+      if (input) {
+        input.value = '';
+        updateInputStats();
+        showToast('Document cleared', 'info');
+      }
+    }
+
+    // Drag and drop listener setup
+    function setupDragAndDrop() {
+      const input = document.getElementById('contract-input');
+      if (!input) return;
+      ['dragenter', 'dragover'].forEach(eventName => {
+        input.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          input.classList.add('border-indigo-400', 'ring-2', 'ring-indigo-400/50');
+        }, false);
+      });
+      ['dragleave', 'drop'].forEach(eventName => {
+        input.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          input.classList.remove('border-indigo-400', 'ring-2', 'ring-indigo-400/50');
+        }, false);
+      });
+      input.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+          const file = files[0];
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            input.value = event.target.result;
+            updateInputStats();
+            showToast(`Loaded file: ${file.name}`, 'success');
+          };
+          reader.readAsText(file);
+        }
+      }, false);
+    }
+
+    // Filter Chips & Live Search
+    function setFilterChip(level) {
+      const chips = ['ALL', 'TWISTED', 'HIGH', 'ESCALATED', 'MEDIUM', 'LOW'];
+      chips.forEach(c => {
+        const el = document.getElementById(`filter-chip-${c}`);
+        if (!el) return;
+        if (c === level) {
+          el.className = 'filter-chip px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-[11px] border border-indigo-500 transition shadow-sm';
+        } else {
+          el.className = 'filter-chip px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold text-[11px] border border-slate-700 transition';
+        }
+      });
+      const select = document.getElementById('filter-risk');
+      if (select) select.value = level;
+      filterClauses(level);
+    }
+
+    function searchClauses(query) {
+      const q = query.toLowerCase().trim();
+      const cards = document.querySelectorAll('.clause-card');
+      cards.forEach(card => {
+        if (!q) {
+          card.classList.remove('hidden');
+          return;
+        }
+        const text = card.innerText.toLowerCase();
+        if (text.includes(q)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    // 1-Click Copy Negotiation Tip
+    function copyTip(clauseId, btn) {
+      const tipElement = document.getElementById(`tip-content-${clauseId}`);
+      if (!tipElement) return;
+      const tipText = tipElement.innerText.trim();
+      navigator.clipboard.writeText(tipText).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span>✅</span> Copied!';
+        btn.classList.add('bg-emerald-600', 'text-white');
+        showToast('Negotiation redline copied to clipboard!', 'copied');
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.classList.remove('bg-emerald-600', 'text-white');
+        }, 2000);
+      });
+    }
+
     // Fetch and cache samples on load
     async function initSamples() {
       try {
@@ -1144,6 +1404,8 @@ def get_dashboard_html() -> str:
       const found = cachedSamples.find(s => s.id === sampleId);
       if (found) {
         document.getElementById('contract-input').value = found.content;
+        updateInputStats();
+        showToast(`Loaded sample: ${found.title || sampleId}`, 'info');
       }
     }
 
@@ -1153,6 +1415,8 @@ def get_dashboard_html() -> str:
         const reader = new FileReader();
         reader.onload = (e) => {
           document.getElementById('contract-input').value = e.target.result;
+          updateInputStats();
+          showToast(`Uploaded file: ${file.name}`, 'success');
         };
         reader.readAsText(file);
       }
@@ -1361,11 +1625,27 @@ def get_dashboard_html() -> str:
         twistedPill.classList.add('hidden');
       }
 
-      // Score and Level
+      // Score and Radial SVG Gauge Animation
       const index = data.risk_overview.legal_risk_index;
       document.getElementById('score-meter').innerText = index;
       const badge = document.getElementById('score-badge');
       badge.innerText = data.risk_overview.risk_level;
+
+      const circle = document.getElementById('gauge-progress-circle');
+      const circumference = 264; // 2 * PI * 42 ~= 263.89
+      const offset = circumference - (index / 100) * circumference;
+
+      if (circle) {
+        circle.style.strokeDashoffset = offset;
+        if (index >= 75) {
+          circle.setAttribute('stroke', '#f43f5e'); // Rose
+        } else if (index >= 45) {
+          circle.setAttribute('stroke', '#f59e0b'); // Amber
+        } else {
+          circle.setAttribute('stroke', '#10b981'); // Emerald
+        }
+      }
+
       if (index >= 75) {
         badge.className = 'px-3 py-1 text-xs font-extrabold rounded-full badge-critical uppercase tracking-wider';
       } else if (index >= 45) {
@@ -1494,8 +1774,13 @@ def get_dashboard_html() -> str:
             </div>
 
             <div class="space-y-2.5">
-              <div class="text-xs font-bold uppercase tracking-wider text-indigo-300">Recommended Redline / Fallback:</div>
-              <div class="text-xs text-indigo-100 bg-indigo-950/50 p-3.5 rounded-xl border border-indigo-900/60 leading-relaxed">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Recommended Redline / Fallback:</span>
+                <button type="button" onclick="copyTip('${clause.id}', this)" class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-300 hover:text-white bg-indigo-900/40 hover:bg-indigo-800/60 px-2 py-0.5 rounded-md border border-indigo-700/50 transition" title="Copy fallback redline tip">
+                  <span>📋</span> Copy Tip
+                </button>
+              </div>
+              <div id="tip-content-${clause.id}" class="text-xs text-indigo-100 bg-indigo-950/50 p-3.5 rounded-xl border border-indigo-900/60 leading-relaxed">
                 💡 ${clause.negotiation_tip}
               </div>
               <details class="text-xs text-slate-400">
@@ -1807,8 +2092,13 @@ def get_dashboard_html() -> str:
       initSamples();
       loadLLMSettings();
       recalculateSavings();
+      setupDragAndDrop();
+      updateInputStats();
     });
   </script>
+  <!-- Floating Dynamic Toast Notification Container -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
 </body>
 </html>
 """
