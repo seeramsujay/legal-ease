@@ -47,6 +47,10 @@ def test_settings_llm_endpoints():
     assert "nvap...5678" in data["masked_api_key"]
     assert data["confidence_threshold"] == 0.80
 
+    # 4. Test reset endpoint
+    res_reset = client.post("/api/settings/reset")
+    assert res_reset.status_code == 200
+
 
 def test_samples_endpoint():
     res = client.get("/api/samples")

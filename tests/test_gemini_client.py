@@ -86,3 +86,30 @@ async def test_pipeline_escalates_to_gemini():
     assert "gemini" in result.risk_overview.ai_model_used.lower()
     escalated_clause = result.clauses[0]
     assert escalated_clause.analysis_source == "GEMINI_DEEP_REASONING"
+
+
+def test_byok_override_and_environment_fallback(monkeypatch):
+    """Verify BYOK key overrides environment key, and clearing BYOK restores environment key."""
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaSyDefaultEnvKey")
+
+    client = NemotronClient()
+    assert client.is_configured() is True
+    assert client.config.api_key == "AIzaSyDefaultEnvKey"
+    assert client.config.api_key_source == "environment"
+
+    # 1. User enters personal BYOK key in modal
+    client.update_config(api_key="AIzaSyUserPersonalBYOK")
+    assert client.config.api_key == "AIzaSyUserPersonalBYOK"
+    assert client.config.api_key_source == "user_configured"
+
+    # 2. User clears BYOK key in modal -> seamlessly falls back to env key
+    client.update_config(api_key="")
+    assert client.config.api_key == "AIzaSyDefaultEnvKey"
+    assert client.config.api_key_source == "environment"
+
+    # 3. Test reset_to_environment()
+    client.update_config(api_key="AnotherBYOKKey", provider="openai")
+    client.reset_to_environment()
+    assert client.config.provider == "gemini"
+    assert client.config.api_key == "AIzaSyDefaultEnvKey"
+    assert client.config.api_key_source == "environment"

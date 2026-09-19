@@ -114,6 +114,17 @@ async def update_llm_settings(req: LLMConfigUpdateRequest):
     }
 
 
+@app.post("/api/settings/reset")
+async def reset_llm_settings():
+    """Reset LLM configuration back to discovered environment variables."""
+    llm_client.reset_to_environment()
+    status = llm_client.get_status()
+    status["api_key_configured"] = status["configured"]
+    status["masked_api_key"] = status["masked_key"]
+    status["cython_active"] = is_cython_accelerated()
+    return status
+
+
 @app.post("/api/settings/test")
 async def test_llm_connection():
     """Test connection to the active LLM endpoint."""

@@ -391,10 +391,14 @@ def get_dashboard_html() -> str:
           </div>
         </div>
 
-        <!-- API Key Input -->
+        <!-- API Key Input (BYOK Mode with Environment Fallback) -->
         <div>
-          <label class="block font-bold text-slate-300 mb-1" for="modal-api-key">API Key (Optional if set in environment)</label>
-          <input type="password" id="modal-api-key" placeholder="AIzaSy... or nvapi-... or sk-..." class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500">
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-300" for="modal-api-key">API Key / BYOK (Optional)</label>
+            <span id="modal-key-badge" class="text-[10px] font-bold text-indigo-400">BYOK Supported</span>
+          </div>
+          <input type="password" id="modal-api-key" placeholder="AIzaSy... or nvapi-... or sk-... (Leave empty for environment default)" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500">
+          <p class="text-[10px] text-slate-400 mt-1">Leave blank to use server environment key (<code class="text-indigo-300">GEMINI_API_KEY</code>). Enter a key to override with your personal BYOK key.</p>
         </div>
 
         <!-- Base URL -->
@@ -423,9 +427,14 @@ def get_dashboard_html() -> str:
 
       <!-- Modal Footer -->
       <div class="flex items-center justify-between pt-3 border-t border-slate-800">
-        <button type="button" onclick="testConnection()" id="modal-test-btn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition flex items-center gap-1.5">
-          <span>Ping / Test Connection</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="testConnection()" id="modal-test-btn" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition flex items-center gap-1.5">
+            <span>Ping / Test Connection</span>
+          </button>
+          <button type="button" onclick="resetToEnvironmentSettings()" id="modal-reset-btn" class="hidden px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-bold border border-amber-800/60 transition flex items-center gap-1">
+            <span>↺ Reset to Env</span>
+          </button>
+        </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="toggleLLMModal()" class="px-3 py-2 rounded-lg text-slate-400 hover:text-white text-xs font-semibold">Cancel</button>
           <button type="button" onclick="saveLLMSettings()" id="modal-save-btn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition">
@@ -1473,6 +1482,8 @@ def get_dashboard_html() -> str:
           const model = llmSettings.model_name || 'gemini-2.0-flash-lite';
           selectProviderPreset(prov);
 
+          const resetBtn = document.getElementById('modal-reset-btn');
+          const keyBadge = document.getElementById('modal-key-badge');
           if (llmSettings.api_key_configured) {
             dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
             label.innerText = `${prov.toUpperCase()}: ${model}`;
@@ -1481,17 +1492,31 @@ def get_dashboard_html() -> str:
             if (llmSettings.api_key_source === 'environment') {
               envBadge.classList.remove('hidden');
               envBox.classList.remove('hidden');
-              envDesc.innerText = `Active API Key read from server environment. Evaluator does not need to enter BYOK!`;
+              envBox.className = 'p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 space-y-1';
+              envDesc.innerText = `Active API Key read from server environment (GEMINI_API_KEY). Evaluator does not need to enter BYOK! You can enter a key below to override if desired.`;
+              if (resetBtn) resetBtn.classList.add('hidden');
+              if (keyBadge) keyBadge.innerText = 'Env Key Active';
+            } else if (llmSettings.api_key_source === 'user_configured') {
+              envBadge.classList.remove('hidden');
+              envBox.classList.remove('hidden');
+              envBox.className = 'p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-800/60 text-indigo-200 space-y-1';
+              envDesc.innerText = `Using custom BYOK API key. Clear key or click 'Reset to Env' to fall back to server environment defaults.`;
+              if (resetBtn) resetBtn.classList.remove('hidden');
+              if (keyBadge) keyBadge.innerText = 'BYOK Active';
             } else {
               envBadge.classList.add('hidden');
               envBox.classList.add('hidden');
+              if (resetBtn) resetBtn.classList.add('hidden');
             }
           } else {
             dot.className = 'w-2 h-2 rounded-full bg-slate-500';
             label.innerText = `Configure AI (${prov.toUpperCase()})`;
             envBadge.classList.add('hidden');
             envBox.classList.remove('hidden');
-            envDesc.innerText = `No environment key detected. You can set GEMINI_API_KEY in your environment or enter an API key below.`;
+            envBox.className = 'p-3.5 rounded-xl bg-slate-900/60 border border-slate-700/60 text-slate-300 space-y-1';
+            envDesc.innerText = `Operating in pure Local-First mode (Cython C-Accelerated). To activate LLM deep synthesis, set GEMINI_API_KEY in your environment, or enter a BYOK key below.`;
+            if (resetBtn) resetBtn.classList.add('hidden');
+            if (keyBadge) keyBadge.innerText = 'Local Mode';
           }
 
           if (llmSettings.base_url) document.getElementById('modal-base-url').value = llmSettings.base_url;
@@ -1517,9 +1542,9 @@ def get_dashboard_html() -> str:
         model_name: modelName,
         confidence_threshold: threshold,
         provider: llmSettings.provider,
-        enabled: true
+        enabled: true,
+        api_key: apiKey
       };
-      if (apiKey) payload.api_key = apiKey;
 
       try {
         const res = await fetch('/api/settings/llm', {
@@ -1530,10 +1555,23 @@ def get_dashboard_html() -> str:
         if (res.ok) {
           await loadLLMSettings();
           toggleLLMModal();
-          alert('AI Provider settings saved successfully!');
+          showToast('success', 'AI Provider settings updated successfully!');
         }
       } catch (e) {
-        alert('Failed to save settings: ' + e);
+        showToast('error', 'Failed to save settings: ' + e);
+      }
+    }
+
+    async function resetToEnvironmentSettings() {
+      try {
+        const res = await fetch('/api/settings/reset', { method: 'POST' });
+        if (res.ok) {
+          document.getElementById('modal-api-key').value = '';
+          await loadLLMSettings();
+          showToast('info', 'Restored server environment key defaults!');
+        }
+      } catch (e) {
+        showToast('error', 'Failed to reset settings: ' + e);
       }
     }
 

@@ -108,55 +108,53 @@ class NemotronClient:
         self._limits = httpx.Limits(max_keepalive_connections=10, max_connections=20)
 
     def _discover_initial_config(self) -> LLMConfig:
-        """Automatically detect active API keys from the environment prioritizing Gemini Flash Lite."""
-        # 1. Check Gemini
-        for var in PROVIDER_PRESETS["gemini"]["env_vars"]:
-            val = os.getenv(var)
-            if val:
-                return LLMConfig(
-                    api_key=val,
-                    base_url=PROVIDER_PRESETS["gemini"]["base_url"],
-                    model_name=os.getenv("GEMINI_MODEL_NAME", PROVIDER_PRESETS["gemini"]["model_name"]),
-                    provider="gemini",
-                    enabled=True,
-                    api_key_source="environment",
-                )
+        """Automatically detect active API keys from the environment prioritizing user preference or Gemini Flash Lite."""
+        _load_env_file()
+        threshold = 0.75
+        try:
+            if "CONFIDENCE_THRESHOLD" in os.environ:
+                threshold = float(os.environ["CONFIDENCE_THRESHOLD"])
+        except ValueError:
+            threshold = 0.75
 
-        # 2. Check Nemotron
-        for var in PROVIDER_PRESETS["nemotron"]["env_vars"]:
-            val = os.getenv(var)
-            if val:
-                return LLMConfig(
-                    api_key=val,
-                    base_url=os.getenv("NEMOTRON_BASE_URL", PROVIDER_PRESETS["nemotron"]["base_url"]),
-                    model_name=os.getenv("NEMOTRON_MODEL_NAME", PROVIDER_PRESETS["nemotron"]["model_name"]),
-                    provider="nemotron",
-                    enabled=True,
-                    api_key_source="environment",
-                )
+        preferred_prov = os.getenv("LLM_PROVIDER", "").lower().strip()
+        provider_order = ["gemini", "nemotron", "openai"]
+        if preferred_prov in provider_order:
+            provider_order.remove(preferred_prov)
+            provider_order.insert(0, preferred_prov)
 
-        # 3. Check OpenAI / generic
-        for var in PROVIDER_PRESETS["openai"]["env_vars"] + ["LLM_API_KEY"]:
-            val = os.getenv(var)
-            if val:
-                return LLMConfig(
-                    api_key=val,
-                    base_url=os.getenv("OPENAI_BASE_URL", PROVIDER_PRESETS["openai"]["base_url"]),
-                    model_name=os.getenv("OPENAI_MODEL_NAME", PROVIDER_PRESETS["openai"]["model_name"]),
-                    provider="openai",
-                    enabled=True,
-                    api_key_source="environment",
-                )
+        for prov in provider_order:
+            preset = PROVIDER_PRESETS[prov]
+            vars_to_check = preset["env_vars"] + (["LLM_API_KEY"] if prov == "openai" else [])
+            for var in vars_to_check:
+                val = os.getenv(var)
+                if val and val.strip():
+                    return LLMConfig(
+                        api_key=val.strip(),
+                        base_url=os.getenv(f"{prov.upper()}_BASE_URL", preset["base_url"]),
+                        model_name=os.getenv(f"{prov.upper()}_MODEL_NAME", preset["model_name"]),
+                        provider=prov,
+                        enabled=True,
+                        confidence_threshold=threshold,
+                        api_key_source="environment",
+                    )
 
-        # 4. Fallback default: Gemini Flash-Lite ready for BYOK or local operation
+        target_prov = preferred_prov if preferred_prov in PROVIDER_PRESETS else "gemini"
+        preset = PROVIDER_PRESETS[target_prov]
         return LLMConfig(
             api_key=None,
-            base_url=PROVIDER_PRESETS["gemini"]["base_url"],
-            model_name=PROVIDER_PRESETS["gemini"]["model_name"],
-            provider="gemini",
+            base_url=os.getenv(f"{target_prov.upper()}_BASE_URL", preset["base_url"]),
+            model_name=os.getenv(f"{target_prov.upper()}_MODEL_NAME", preset["model_name"]),
+            provider=target_prov,
             enabled=False,
+            confidence_threshold=threshold,
             api_key_source="none",
         )
+
+    def reset_to_environment(self) -> None:
+        """Resets runtime configuration back to discovered environment variables."""
+        _load_env_file()
+        self.config = self._discover_initial_config()
 
     def is_configured(self) -> bool:
         """Returns True if a valid API key is present and remote escalation is enabled."""
@@ -223,8 +221,31 @@ class NemotronClient:
             self.config.provider = provider
 
         if api_key is not None:
-            self.config.api_key = api_key.strip() if api_key else None
-            self.config.api_key_source = "user_configured" if api_key else "none"
+            cleaned = api_key.strip()
+            if cleaned:
+                self.config.api_key = cleaned
+                self.config.api_key_source = "user_configured"
+                if enabled is None:
+                    self.config.enabled = True
+            else:
+                # User cleared BYOK; try to find an environment key for this provider
+                env_key = None
+                for env_var in PROVIDER_PRESETS.get(self.config.provider, {}).get("env_vars", []):
+                    val = os.getenv(env_var)
+                    if val and val.strip():
+                        env_key = val.strip()
+                        break
+                if env_key:
+                    self.config.api_key = env_key
+                    self.config.api_key_source = "environment"
+                    if enabled is None:
+                        self.config.enabled = True
+                else:
+                    self.config.api_key = None
+                    self.config.api_key_source = "none"
+                    if enabled is None:
+                        self.config.enabled = False
+
         if base_url is not None:
             self.config.base_url = base_url.rstrip("/")
         if model_name is not None:
@@ -234,8 +255,7 @@ class NemotronClient:
         if confidence_threshold is not None:
             self.config.confidence_threshold = confidence_threshold
 
-        # If an API key is provided, auto-enable
-        if self.config.api_key and enabled is None:
+        if self.config.api_key and enabled is None and api_key is not None:
             self.config.enabled = True
 
     async def test_connection(self) -> Dict[str, Any]:
