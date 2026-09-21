@@ -1,6 +1,6 @@
 # ⚖️ Legal-Ease: Privacy-First AI Legal Navigator & Contract Risk Analyzer
 
-[![Tests](https://img.shields.io/badge/tests-44%20passed-success)](https://github.com/seeramsujay/legal-ease)
+[![Tests](https://img.shields.io/badge/tests-132%20passed-success)](https://github.com/seeramsujay/legal-ease)
 [![Repo Size](https://img.shields.io/badge/repo%20size-%3C%201%20MB%20(limit%2010MB)-blue)](https://github.com/seeramsujay/legal-ease)
 [![Package Manager](https://img.shields.io/badge/package%20managers-uv%20%7C%20pnpm%20only-indigo)](https://github.com/seeramsujay/legal-ease)
 [![Single Branch](https://img.shields.io/badge/branch-main%20only-teal)](https://github.com/seeramsujay/legal-ease)
@@ -239,7 +239,7 @@ cd legal-ease
 ```
 
 ### 1. Run Automated Tests (`pnpm test`)
-Execute the full 44-test suite covering PII anonymization, semantic vector embeddings, risk heuristics, clause segmentation, Cython C-acceleration parity, Gemini Flash-Lite & Nemotron escalation routing, version comparison, API endpoints, and security guardrails:
+Execute the full 132-test suite covering PII anonymization, semantic vector embeddings, risk heuristics, clause segmentation, Cython C-acceleration parity, Gemini Flash-Lite & Nemotron escalation routing, version comparison, API endpoints, and security guardrails:
 ```bash
 pnpm test
 ```
@@ -375,7 +375,7 @@ Legal-Ease is engineered to maximize every scoring tier outlined in the hackatho
 * **Code Quality & Architecture:** Fully typed Python 3.12 with Pydantic v2 schemas and pure separation of concerns.
 * **Security:** 100% local deterministic PII redaction and prompt injection regex sanitization.
 * **Efficiency:** Native Cython C-extensions (`-O3`) for sub-millisecond string matching and 90% cloud token reduction via selective clause escalation.
-* **Testing:** **44 automated pytest tests** with **100% pass rate** (`pnpm test`) validating every subsystem in under 2 seconds.
+* **Testing:** **132 automated pytest tests** with **100% pass rate** (`pnpm test`) validating every subsystem in under 2 seconds.
 
 ### 💎 Low Impact Evaluation Criteria (Final Layers of Polish)
 * **Extreme Accessibility:** Full WCAG 2.1 AAA compliance with 7:1 contrast, keyboard navigation engine (`?`, `/`, `Ctrl+Enter`, `Alt+1-5`), W3C ARIA tablist patterns, and reduced motion mode.
@@ -390,7 +390,7 @@ Legal-Ease is engineered to maximize every scoring tier outlined in the hackatho
 | **Semantic Intelligence** | **Sub-word N-Gram Vector Space**: Analyzes cosine similarity against 8 predatory legal archetypes, detects twisted phrasing, and drops confidence on sneaky euphemisms. |
 | **LLM Flexibility & Env Allowance** | Supports **Google Gemini 2.0 Flash-Lite**, **NVIDIA Nemotron 70B**, and **OpenAI**. Automatically discovers environment keys (`GEMINI_API_KEY`) so evaluators require zero BYOK setup. |
 | **Efficiency & Speed** | Native **Cython C-compilation (`-O3`)** accelerates string distance and alignment. High-confidence evaluations complete locally in sub-milliseconds with zero remote API latency. |
-| **Testing** | **44 automated tests** with **100% pass rate** (`pnpm test`), validating PII redaction, semantic archetypes, Cython C/Python parity, Gemini/Nemotron escalation, diffing, REST endpoints, and security guardrails. |
+| **Testing** | **132 automated tests** with **100% pass rate** (`pnpm test`), validating PII redaction, semantic archetypes, Cython C/Python parity, Gemini/Nemotron escalation, diffing, REST endpoints, and security guardrails. |
 | **Accessibility & UI** | **WCAG 2.1 Level AAA/AA compliant** with flashy modern aesthetics (Google Fonts `Poppins` (weights 300–800) & `JetBrains Mono`), skip-to-content links, semantic landmarks, W3C ARIA tablist patterns, keyboard navigation, 7:1 contrast ratios, screen-reader live updates, and reduced-motion support. |
 | **Repository Rules** | Strict compliance: **Single branch (`main`)**, **Repo size < 1 MB** (well under the 10 MB limit), public GitHub repository, and built with `uv` and `pnpm` only. |
 

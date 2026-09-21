@@ -19,11 +19,11 @@ from legal_ease.semantic_analyzer import get_semantic_model, SemanticClauseInsig
 
 # Indemnification heuristics
 _RE_CONTRACTOR_INDEMNIFIES = re.compile(
-    r"(?:contractor|consultant|employee|vendor|provider|licensee|user)\s+(?:shall|agrees to)\s+(?:indemnif|hold\s+harmless)",
+    r"(?:contractor|consultant|employee|vendor|provider|licensee|user)\s+(?:shall|agrees to)\s+(?:defend[\w\s\,]*?)?(?:indemnif|hold\s+harmless)",
     re.IGNORECASE,
 )
 _RE_CLIENT_INDEMNIFIES = re.compile(
-    r"(?:client|company|customer|employer|licensor)\s+(?:shall|agrees to)\s+(?:indemnif|hold\s+harmless)",
+    r"(?:client|company|customer|employer|licensor)\s+(?:shall|agrees to)\s+(?:defend[\w\s\,]*?)?(?:indemnif|hold\s+harmless)",
     re.IGNORECASE,
 )
 _RE_ATTORNEY_FEES = re.compile(
@@ -103,7 +103,7 @@ _RE_NET_PAYMENT_TERMS = re.compile(
     re.IGNORECASE,
 )
 _RE_SUBJECTIVE_WITHHOLDING = re.compile(
-    r"sole\s+discretion|subjective\s+satisfaction|withhold\s+payment",
+    r"sole\s+discretion|subjective\s+satisfaction|withhold\s+payment|claw\s*back",
     re.IGNORECASE,
 )
 
@@ -355,7 +355,7 @@ class RiskAnalyzer:
             if has_subjective_approval:
                 score += 30
                 reasons.append("Subjective Payment Withholding: Client may withhold payment based on sole discretion.")
-                traps.append("Discretionary Payment Trap")
+                traps.append("Discretionary Payment / Clawback Trap")
             if not reasons:
                 score += 10
                 reasons.append("Standard invoicing, fee schedules, and milestone delivery terms.")

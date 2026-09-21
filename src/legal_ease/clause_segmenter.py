@@ -89,6 +89,10 @@ CATEGORY_KEYWORDS = {
         "payment",
         "compensation",
         "fees and expenses",
+        "fees",
+        "fee",
+        "pay",
+        "reimbursement",
         "invoicing",
         "billing",
         "late fee",
@@ -135,9 +139,9 @@ class ClauseSegmenter:
     """
 
     HEADER_PATTERNS: List[Pattern[str]] = [
-        # E.g. "Section 1. Indemnification" or "Article 2: Limitation of Liability"
+        # E.g. "§ 1.0 Services" or "Section 1. Indemnification" or "Article 2: Limitation of Liability"
         re.compile(
-            r"^(?:Section|Article|Clause)\s+([0-9IVXLCDM\.]+)\s*[\.\:\-]?\s*([^\n\r]+)",
+            r"^(?:Section|Article|Clause|§)\s+([0-9IVXLCDM\.]+)\s*[\.\:\-]?\s*([^\n\r]+)",
             re.IGNORECASE | re.MULTILINE,
         ),
         # E.g. "1. INDEMNIFICATION" or "1.1 Limitation of Liability" or "1. SERVICES AND COMPENSATION"
@@ -168,32 +172,35 @@ class ClauseSegmenter:
         for pattern in self.HEADER_PATTERNS:
             for match in pattern.finditer(safe_text):
                 start = match.start()
+                # Determine title
                 groups = match.groups()
                 if len(groups) == 2:
-                    sec_num, sec_title = groups
-                    full_title = f"{sec_num.strip()} {sec_title.strip()}"
+                    sec_num, sec_name = groups
+                    title = f"Section {sec_num}: {sec_name.strip()}"
+                elif len(groups) == 1:
+                    title = groups[0].strip()
                 else:
-                    full_title = groups[0].strip()
-                split_points.append((start, full_title))
+                    title = match.group(0).strip()
+                split_points.append((start, title))
 
-        # Sort and deduplicate split points by character index
+        # Sort split points chronologically
         split_points.sort(key=lambda x: x[0])
-        unique_splits: List[Tuple[int, str]] = []
-        last_idx = -9999
-        for idx, title in split_points:
-            # Enforce minimum distance of 35 characters between successive clause headings
-            if idx > last_idx + 35:
-                unique_splits.append((idx, title))
-                last_idx = idx
 
-        # If formal section headers are detected
-        if len(unique_splits) >= 2:
+        # Deduplicate overlapping or adjacent split points
+        unique_splits: List[Tuple[int, str]] = []
+        last_pos = -1
+        for pos, title in split_points:
+            if pos > last_pos:
+                unique_splits.append((pos, title))
+                last_pos = pos
+
+        # If headers were successfully identified, slice text into clauses
+        if unique_splits:
             clauses: List[RawClause] = []
-            
-            # Check if there is meaningful preamble before the first header (>100 chars & >15 words)
-            first_header_idx = unique_splits[0][0]
-            preamble_candidate = safe_text[:first_header_idx].strip()
-            if len(preamble_candidate) > 100 and len(preamble_candidate.split()) > 15:
+            # Check if there is a preamble before the first header
+            first_idx = unique_splits[0][0]
+            if first_idx > 50:
+                preamble_candidate = safe_text[:first_idx].strip()
                 clauses.append(
                     RawClause(
                         clause_id=1,

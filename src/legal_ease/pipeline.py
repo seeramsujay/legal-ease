@@ -175,3 +175,27 @@ class LegalAnalysisPipeline:
             attorney_checklist=attorney_brief,
             analyzed_at=datetime.now(timezone.utc).isoformat(),
         )
+
+    def analyze(
+        self, raw_text: Optional[str], document_title: Optional[str] = None
+    ) -> ContractAnalysisResponse:
+        """
+        Synchronously executes the full legal analysis.
+        Convenience wrapper around analyze_async for CLI, scripts, and synchronous workflows.
+        Handles both idle thread execution and active event loop contexts safely.
+        """
+        import asyncio
+        import concurrent.futures
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                return pool.submit(
+                    asyncio.run, self.analyze_async(raw_text, document_title)
+                ).result()
+        else:
+            return asyncio.run(self.analyze_async(raw_text, document_title))
