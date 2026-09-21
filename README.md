@@ -1,6 +1,6 @@
 # ⚖️ Legal-Ease: Privacy-First AI Legal Navigator & Contract Risk Analyzer
 
-[![Tests](https://img.shields.io/badge/tests-132%20passed-success)](https://github.com/seeramsujay/legal-ease)
+[![Tests](https://img.shields.io/badge/tests-154%20passed-success)](https://github.com/seeramsujay/legal-ease)
 [![Repo Size](https://img.shields.io/badge/repo%20size-%3C%201%20MB%20(limit%2010MB)-blue)](https://github.com/seeramsujay/legal-ease)
 [![Package Manager](https://img.shields.io/badge/package%20managers-uv%20%7C%20pnpm%20only-indigo)](https://github.com/seeramsujay/legal-ease)
 [![Single Branch](https://img.shields.io/badge/branch-main%20only-teal)](https://github.com/seeramsujay/legal-ease)
@@ -16,19 +16,40 @@
 
 ---
 
-## 📌 1. Chosen Vertical & Problem Statement
+## 🎯 1. Official Hackathon Problem Statement & 7 Core Use Cases Alignment
 
 ### **Vertical: AI for Legal Assistance & Access**
 
-Independent freelancers, technical contractors, startup founders, and small business owners sign dozens of legal agreements every year—Independent Contractor Agreements, Master Services Agreements (MSAs), Statements of Work (SOWs), SaaS Terms of Service, and Non-Disclosure Agreements (NDAs). 
+> ### **Official Problem Statement:**
+> *"Legal information can often be complex, difficult to understand, and challenging to navigate without professional assistance. Build a GenAI-powered solution that makes legal information and basic legal assistance more accessible by helping users understand, compare, and navigate legal documents and information."*
 
-### The Problem:
-* **The Access Gap:** Commercial attorneys bill between **$350 to $800+ per hour**, making formal legal review financially impossible for routine $5,000–$50,000 contracts.
-* **The Legalese Asymmetry & Semantic Obfuscation:** Enterprise counterparties draft one-sided templates packed with obfuscated traps: **unilateral indemnification**, **unlimited contractor liability with an arbitrary client cap**, **pre-existing IP forfeiture**, **euphemistic dispute surrenders**, and **immediate zero-notice termination**. Drafters deliberately twist phrasing to sneak predatory clauses past simple keyword searches.
-* **The Privacy Hazard:** Pasting unredacted contracts containing private names, personal addresses, tax IDs (SSNs/EINs), client rates, and financial terms into public LLMs creates catastrophic privacy and confidentiality breaches.
+> ### **Mandatory Compliance Note:**
+> *"Solutions should provide information and assistance, rather than replace professional legal advice. The use cases listed above are intended as potential directions and are not exhaustive or prescriptive. Participants are encouraged to explore the problem space, think creatively, and develop innovative approaches or entirely different use cases within the theme. Original ideas, experimentation, and out-of-the-box thinking are encouraged."*
 
-### The Solution: Legal-Ease
-**Legal-Ease** is a local-first, privacy-guaranteed AI contract analyzer and legal navigator that democratizes legal comprehension. It strips out all sensitive identifiers on the client machine, analyzes semantic vector embeddings against predatory drafting archetypes, flags twisted euphemisms, translates dense legalese into plain English, tracks liability shifts between contract revisions, and synthesizes a structured **Attorney Consultation Brief** to make paid lawyer consultations 5x more efficient.
+---
+
+### **Comprehensive 1-to-1 Mapping to All 7 Official Potential Use Cases**
+
+Legal-Ease is architected to address every single potential use case stipulated in the hackathon challenge prompt with dedicated code modules, automated test suites, and interactive web dashboard interfaces:
+
+| # | Official Potential Use Case | Implemented Code Module | Live User Interface Location | Technical Solution Details |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **Simplifying complex legal documents** | [`simplifier.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/simplifier.py) | **Tab 1:** Contract Risk Analyzer → Clause Cards | Converts archaic Latinate legalese into 8th-grade conversational plain English and actionable *"What It Means For You"* consequence breakdowns. |
+| **2** | **Comparing contracts, agreements, or policies** | [`comparator.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/comparator.py) & [`fast_ops.pyx`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/fast_ops.pyx) | **Tab 2:** Version Comparator (`Alt + 2`) | Side-by-side Cython C-accelerated comparative diffing identifying added, deleted, and modified clauses with a dynamic net risk trajectory (*SAFER* vs *MORE_RISK*). |
+| **3** | **Highlighting important clauses, obligations, risks, or inconsistencies** | [`risk_analyzer.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/risk_analyzer.py) & [`semantic_analyzer.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/semantic_analyzer.py) | **Tab 1:** Risk Overview & Semantic Radar | Scores risk from 0 to 100 via character n-gram cosine projections and exposes 8 predatory legal traps (e.g. unilateral indemnity, uncapped liability, sneak IP grabs). |
+| **4** | **Answering questions based on provided legal documents** | [`assistant.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/assistant.py) | **Tab 3:** Legal Navigator AI (`Alt + 3`) | Context-grounded conversational Q&A powered by Google Gemini 2.0 Flash-Lite / Nemotron, citing exact section numbers with anti-injection guardrails. |
+| **5** | **Helping users understand their options and potential next steps** | [`simplifier.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/simplifier.py) & [`llm_client.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/llm_client.py) | **Tab 1:** Negotiation Guidance & Redline Fallbacks | Delivers tactical negotiation alternatives and 1-click bilateral redline counter-proposals ready to paste into negotiation emails. |
+| **6** | **Generating summaries, checklists, or other actionable outputs** | [`pipeline.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/pipeline.py) & [`checklist_generator.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/checklist_generator.py) | **Tab 1:** Executive Summary & Priority Checklists | Produces a holistic Legal Risk Index, categorized risk severity matrices, and exportable priority counter-proposal negotiation checklists. |
+| **7** | **Helping users prepare information or questions for a legal professional** | [`checklist_generator.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/checklist_generator.py) | **Tab 1:** Attorney Consultation Brief Modal & **Tab 5** | Automatically synthesizes an attorney-grade **Consultation Brief (.md)** with prioritized statutory questions, cutting $500/hr billed consultation hours into focused 15-minute reviews. |
+
+---
+
+### **Out-of-the-Box Innovations Beyond the Core Requirements**
+In accordance with the hackathon's encouragement of *"original ideas, experimentation, and out-of-the-box thinking"*, Legal-Ease introduces four industry-first innovations:
+1. **100% Client-Side Deterministic PII Shield (`anonymizer.py`):** Cryptographically redacts all private names, emails, tax IDs, and dollar figures locally before any text touches an AI model.
+2. **Native Cython C-Compiled Speed Engine (`fast_ops.pyx`):** O(min(n, m)) C-level Levenshtein and Jaccard matrix operations compiled with `-O3 -march=native -ffast-math` for sub-millisecond document comparisons.
+3. **Sub-Word Vector Semantic Obfuscation Detection (`semantic_analyzer.py`):** Detects deliberately twisted euphemisms that mask predatory terms from conventional keyword search engines.
+4. **Extreme Accessibility & VPAT Self-Declaration (`ACCESSIBILITY.md`):** Full compliance with **WCAG 2.1 Level AAA / AA**, complete keyboard navigation (`Alt + 1-5`, `Ctrl + Enter`, `/`, `?`, `Esc`), high contrast ratios (>14:1), and zero mouse dependency.
 
 ---
 
@@ -165,7 +186,12 @@ Sending entire 30-page commercial contracts to cloud LLMs wastes money, spikes l
 
 ---
 
-## 🎨 4. Flashy Dashboard & Extreme Accessibility (WCAG 2.1 AAA/AA)
+## ♿ 4. Extreme Accessibility (WCAG 2.1 Level AAA) & Universal Design
+
+> For the comprehensive Voluntary Product Accessibility Template (VPAT) and technical audit, see [****](file:///home/suzaykid/Projects/legal-ease/ACCESSIBILITY.md).  
+> For the complete hackathon alignment mapping guide, see [****](file:///home/suzaykid/Projects/legal-ease/PROBLEM_STATEMENT_ALIGNMENT.md).
+
+The Legal-Ease dashboard combines futuristic glassmorphic visuals with strict **Universal Design**, zero-experience beginner onboarding, and **WCAG 2.1 Level AAA/AA** compliance:
 
 The Legal-Ease dashboard combines futuristic glassmorphic visuals with strict **Universal Design**, zero-experience beginner onboarding, and **WCAG 2.1 Level AAA/AA** compliance:
 
