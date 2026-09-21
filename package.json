@@ -1,6 +1,6 @@
 {
   "name": "legal-ease",
-  "version": "1.2.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Privacy-First AI Legal Navigator & Contract Risk Analyzer",
   "scripts": {

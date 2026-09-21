@@ -33,7 +33,7 @@ from legal_ease.models import (
 app = FastAPI(
     title="Legal-Ease API",
     description="Privacy-First AI Legal Navigator & Contract Risk Analyzer (Powered by Local Shield + Gemini Flash-Lite / Nemotron + Cython)",
-    version="1.3.0",
+    version="1.0.0",
 )
 
 # Global CORS middleware configuration
@@ -71,7 +71,7 @@ async def health():
     return {
         "status": "healthy",
         "service": "legal-ease",
-        "version": "1.3.0",
+        "version": "1.0.0",
         "vertical": "AI for Legal Assistance & Access",
         "provider": llm_client.config.provider,
         "llm_configured": llm_client.is_configured(),

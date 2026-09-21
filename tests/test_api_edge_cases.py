@@ -7,7 +7,7 @@ sanitization defenses, and conversational query routing.
 import io
 import pytest
 from fastapi.testclient import TestClient
-from legal_ease.main import app
+from legal_ease.main import app, llm_client
 from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
 
 client = TestClient(app)
@@ -123,6 +123,13 @@ class TestCompareEndpointEdgeCases:
 
 class TestChatEndpointEdgeCases:
     """Test /api/chat interactive legal Q&A and prompt injection barriers."""
+
+    def setup_method(self):
+        self._orig_enabled = llm_client.config.enabled
+        llm_client.config.enabled = False
+
+    def teardown_method(self):
+        llm_client.config.enabled = self._orig_enabled
 
     def test_chat_empty_message_returns_400(self):
         res = client.post(
