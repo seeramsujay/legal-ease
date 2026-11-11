@@ -3,10 +3,11 @@ Unit tests for Google Gemini Flash-Lite client, provider presets,
 and environment allowance discovery.
 """
 
-import os
-import pytest
 from unittest.mock import AsyncMock
-from legal_ease.llm_client import NemotronClient, LLMConfig, PROVIDER_PRESETS
+
+import pytest
+
+from legal_ease.llm_client import LLMConfig, NemotronClient
 from legal_ease.pipeline import LegalAnalysisPipeline
 
 

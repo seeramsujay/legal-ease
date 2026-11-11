@@ -5,7 +5,9 @@ Tests all subcommands: analyze, compare, anonymize, samples, help, and error han
 
 import sys
 import tempfile
+
 import pytest
+
 from legal_ease.cli import main
 from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
 
@@ -61,8 +63,10 @@ class TestCLI:
         assert "Error reading" in captured.err
 
     def test_cli_compare_command(self, monkeypatch, capsys):
-        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f1, \
-             tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f2:
+        with (
+            tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f1,
+            tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f2,
+        ):
             f1.write(FREELANCE_HIGH_RISK)
             f2.write(FREELANCE_NEGOTIATED)
             p1 = f1.name

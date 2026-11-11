@@ -3,8 +3,8 @@ Unit tests for the deterministic risk scoring engine.
 """
 
 from legal_ease.clause_segmenter import RawClause
-from legal_ease.risk_analyzer import RiskAnalyzer
 from legal_ease.models import ClauseCategory, RiskSeverity
+from legal_ease.risk_analyzer import RiskAnalyzer
 
 
 def test_unilateral_indemnity_trap_detection():
@@ -64,7 +64,12 @@ def test_zero_notice_termination_trap():
 def test_document_overview_calculation():
     analyzer = RiskAnalyzer()
     high_eval = analyzer.evaluate_clause(
-        RawClause(1, "Indemnity", "Contractor shall indemnify Company from any and all claims with attorney's fees.", ClauseCategory.INDEMNIFICATION)
+        RawClause(
+            1,
+            "Indemnity",
+            "Contractor shall indemnify Company from any and all claims with attorney's fees.",
+            ClauseCategory.INDEMNIFICATION,
+        )
     )
     low_eval = analyzer.evaluate_clause(
         RawClause(2, "Governing Law", "Governed by the laws of Texas.", ClauseCategory.GOVERNING_LAW)

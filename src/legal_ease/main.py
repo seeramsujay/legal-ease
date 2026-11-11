@@ -4,31 +4,29 @@ Provides REST API endpoints, LLM escalation management (Google Gemini Flash-Lite
 NVIDIA Nemotron, OpenAI), native Cython compilation telemetry, and serves the modern, accessible web dashboard.
 """
 
-from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from legal_ease.llm_client import NemotronClient, LLMConfig
-from legal_ease.pipeline import LegalAnalysisPipeline
-from legal_ease.comparator import ContractComparator
 from legal_ease.anonymizer import PIIAnonymizer
 from legal_ease.assistant import LegalAssistant
-from legal_ease.fast_ops_bridge import is_cython_accelerated, get_acceleration_info
-from legal_ease.sample_contracts import get_all_samples
-from legal_ease.guardrails import get_standard_disclaimer
+from legal_ease.comparator import ContractComparator
+from legal_ease.fast_ops_bridge import get_acceleration_info, is_cython_accelerated
+from legal_ease.llm_client import NemotronClient
 from legal_ease.models import (
+    AnalyzeRequest,
+    AnonymizationResult,
+    AnonymizeRequest,
+    ChatRequest,
+    ChatResponse,
+    CompareRequest,
     ContractAnalysisResponse,
     ContractComparisonResponse,
-    AnonymizationResult,
-    ChatResponse,
-    ChatRequest,
-    SampleContract,
-    AnalyzeRequest,
-    CompareRequest,
-    AnonymizeRequest,
     LLMConfigUpdateRequest,
+    SampleContract,
 )
+from legal_ease.pipeline import LegalAnalysisPipeline
+from legal_ease.sample_contracts import get_all_samples
 
 app = FastAPI(
     title="Legal-Ease API",
@@ -221,7 +219,7 @@ async def test_llm_connection():
     return res
 
 
-@app.get("/api/samples", response_model=List[SampleContract])
+@app.get("/api/samples", response_model=list[SampleContract])
 async def get_samples():
     """Retrieve realistic contract samples for demonstration."""
     return get_all_samples()
@@ -238,7 +236,7 @@ async def analyze_contract(request: AnalyzeRequest):
 @app.post("/api/analyze-file", response_model=ContractAnalysisResponse)
 async def analyze_file(
     file: UploadFile = File(...),
-    title: Optional[str] = Form(None),
+    title: str | None = Form(None),
 ):
     """Upload and analyze a plain text or Markdown contract file."""
     content = await file.read()
@@ -309,4 +307,5 @@ async def chat_with_assistant(request: ChatRequest):
 async def serve_dashboard():
     """Serves the complete Single-Page Modern UI Application with WCAG 2.1 AAA Accessibility."""
     from legal_ease.ui import get_dashboard_html
+
     return HTMLResponse(content=get_dashboard_html())

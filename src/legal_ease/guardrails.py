@@ -5,7 +5,7 @@ and protects conversational endpoints from prompt injection attacks.
 """
 
 import re
-from typing import Dict, Any, Optional
+from typing import Any
 
 STANDARD_LEGAL_DISCLAIMER = (
     "LEGAL DISCLAIMER: Legal-Ease is an AI-powered document literacy and analysis tool "
@@ -46,7 +46,7 @@ def get_attorney_prep_note() -> str:
     return ATTORNEY_PREP_NOTE
 
 
-def sanitize_input_text(text: Optional[str]) -> str:
+def sanitize_input_text(text: str | None) -> str:
     """
     Defensively sanitizes input contract text.
     - Strips dangerous null bytes (\x00).
@@ -61,18 +61,18 @@ def sanitize_input_text(text: Optional[str]) -> str:
 
     # Strip null bytes that can cause C-library string termination errors
     cleaned = text.replace("\x00", "")
-    
+
     # Normalize CRLF and CR to LF
     cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
-    
+
     # Enforce safe upper bound on input length (approx 100 pages of text)
     if len(cleaned) > 500000:
         cleaned = cleaned[:500000]
-        
+
     return cleaned.strip()
 
 
-def validate_chat_query(query: Optional[str]) -> Dict[str, Any]:
+def validate_chat_query(query: str | None) -> dict[str, Any]:
     """
     Validates user chat queries against adversarial prompt injection attempts.
     Returns a dictionary with 'valid': bool, and either 'sanitized_query' or 'reason'.
@@ -82,7 +82,7 @@ def validate_chat_query(query: Optional[str]) -> Dict[str, Any]:
             "valid": False,
             "reason": "Query cannot be empty. Please ask a specific question about your contract.",
         }
-        
+
     cleaned_query = str(query).strip()
     if not cleaned_query:
         return {

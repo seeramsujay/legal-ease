@@ -4,10 +4,12 @@ Validates local rule-based intent parsing, grounded clause citation,
 mandatory disclaimer attachment, and LLM orchestration.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
 from legal_ease.assistant import LegalAssistant
-from legal_ease.llm_client import NemotronClient, LLMConfig
+from legal_ease.llm_client import LLMConfig, NemotronClient
 from legal_ease.sample_contracts import FREELANCE_HIGH_RISK
 
 
@@ -65,7 +67,9 @@ class TestLegalAssistant:
             "Are there non-compete rules or can I compete?",
             contract_text=FREELANCE_HIGH_RISK,
         )
-        assert "Restrictive Covenants" in res.answer or "Non-Compete" in res.answer or "non-compete" in res.answer.lower()
+        assert (
+            "Restrictive Covenants" in res.answer or "Non-Compete" in res.answer or "non-compete" in res.answer.lower()
+        )
 
     async def test_payment_terms_query_local(self):
         res = await self.assistant.answer_query_async(

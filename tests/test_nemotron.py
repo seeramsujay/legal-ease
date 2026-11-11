@@ -3,13 +3,15 @@ Unit tests for Nemotron / OpenAI-compatible client,
 confidence evaluation, and local-first escalation routing.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, patch
-from legal_ease.llm_client import NemotronClient, LLMConfig
-from legal_ease.risk_analyzer import RiskAnalyzer
+
 from legal_ease.clause_segmenter import RawClause
-from legal_ease.models import ClauseCategory, RiskSeverity
+from legal_ease.llm_client import LLMConfig, NemotronClient
+from legal_ease.models import ClauseCategory
 from legal_ease.pipeline import LegalAnalysisPipeline
+from legal_ease.risk_analyzer import RiskAnalyzer
 
 
 def test_nemotron_client_init_and_config():
@@ -96,7 +98,10 @@ In the event of any breach or disputed remedy, the party may forfeit certain rig
 
     # Verify escalation took place
     assert result.risk_overview.escalated_clauses_count >= 1
-    assert "nemotron" in result.risk_overview.ai_model_used.lower() or "hybrid" in result.risk_overview.ai_model_used.lower()
+    assert (
+        "nemotron" in result.risk_overview.ai_model_used.lower()
+        or "hybrid" in result.risk_overview.ai_model_used.lower()
+    )
 
     escalated_clause = result.clauses[0]
     assert escalated_clause.analysis_source == "NEMOTRON_DEEP_REASONING"

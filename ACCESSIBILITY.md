@@ -117,7 +117,7 @@ Every feature, modal, and action is 100% operable without requiring a mouse:
 
 ## 🧪 Automated Testing Verification
 
-Automated accessibility test suites in [`tests/test_accessibility.py`](file:///home/suzaykid/Projects/legal-ease/tests/test_accessibility.py) continuously validate:
+Automated accessibility test suites in [`tests/test_accessibility.py`](tests/test_accessibility.py) continuously validate:
 1. `test_wcag_landmarks_present` (Presence of header, main, footer, nav, aside)
 2. `test_wcag_skip_link_validity` (Presence and validity of `#main-content` skip link)
 3. `test_wcag_contrast_ratios` (Mathematical contrast verification $\ge 7:1$)

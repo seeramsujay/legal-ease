@@ -3,9 +3,8 @@ Build script for Cython-compiled C-extensions in Legal-Ease.
 Provides ultra-fast clause alignment, Levenshtein calculation, and token matching.
 """
 
-from setuptools import setup, Extension
 from Cython.Build import cythonize
-import os
+from setuptools import Extension, setup
 
 ext_modules = [
     Extension(

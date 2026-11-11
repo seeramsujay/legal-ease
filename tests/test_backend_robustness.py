@@ -4,15 +4,13 @@ Tests core pipeline orchestrator, defensive input sanitization, complex legal pa
 resilience against malformed inputs, and fallback behavior.
 """
 
-import pytest
-from legal_ease.pipeline import LegalAnalysisPipeline
-from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
-from legal_ease.risk_analyzer import RiskAnalyzer
-from legal_ease.simplifier import PlainEnglishSimplifier
 from legal_ease.anonymizer import PIIAnonymizer
+from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
 from legal_ease.comparator import ContractComparator
 from legal_ease.models import ClauseCategory, RiskSeverity
-from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED, SAAS_TERMS
+from legal_ease.pipeline import LegalAnalysisPipeline
+from legal_ease.risk_analyzer import RiskAnalyzer
+from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
 
 
 class TestPipelineRobustness:
@@ -63,8 +61,7 @@ class TestPipelineRobustness:
         pipeline = LegalAnalysisPipeline()
         # Construct large repetitive contract
         sections = [
-            f"{i}. Section {i}. The contractor shall deliver services according to milestone {i}."
-            for i in range(1, 40)
+            f"{i}. Section {i}. The contractor shall deliver services according to milestone {i}." for i in range(1, 40)
         ]
         large_contract = "\n\n".join(sections)
         res = pipeline.analyze(large_contract, document_title="Long Contract")
