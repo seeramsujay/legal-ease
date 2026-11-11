@@ -5,21 +5,22 @@ Guarantees defensive boundary enforcement, prompt-injection defense, and strict 
 
 import pytest
 from pydantic import ValidationError
+
 from legal_ease.guardrails import (
-    get_standard_disclaimer,
     get_attorney_prep_note,
+    get_standard_disclaimer,
     sanitize_input_text,
     validate_chat_query,
 )
 from legal_ease.models import (
-    ClauseCategory,
-    RiskSeverity,
     AnalyzeRequest,
-    CompareRequest,
-    ChatRequest,
     AnonymizeRequest,
-    LLMConfigUpdateRequest,
+    ChatRequest,
     ChatResponse,
+    ClauseCategory,
+    CompareRequest,
+    LLMConfigUpdateRequest,
+    RiskSeverity,
     SampleContract,
 )
 

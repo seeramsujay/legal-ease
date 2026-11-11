@@ -4,8 +4,8 @@ Verifies numerical equivalence, boundary handling, and algorithmic invariants.
 """
 
 import pytest
-from legal_ease import fast_ops_py
-from legal_ease import fast_ops_bridge
+
+from legal_ease import fast_ops_bridge, fast_ops_py
 
 
 class TestFastOpsPy:

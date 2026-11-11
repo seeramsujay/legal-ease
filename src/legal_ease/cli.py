@@ -3,11 +3,12 @@ Command Line Interface for Legal-Ease.
 Allows developers and users to analyze, compare, and redact contracts directly from the shell.
 """
 
-import sys
 import argparse
-from legal_ease.pipeline import LegalAnalysisPipeline
-from legal_ease.comparator import ContractComparator
+import sys
+
 from legal_ease.anonymizer import PIIAnonymizer
+from legal_ease.comparator import ContractComparator
+from legal_ease.pipeline import LegalAnalysisPipeline
 from legal_ease.sample_contracts import get_all_samples
 
 
@@ -21,9 +22,7 @@ def main():
     # Analyze subcommand
     analyze_parser = subparsers.add_parser("analyze", help="Analyze a contract file")
     analyze_parser.add_argument("file", help="Path to contract text file")
-    analyze_parser.add_argument(
-        "--checklist", action="store_true", help="Print the attorney checklist markdown"
-    )
+    analyze_parser.add_argument("--checklist", action="store_true", help="Print the attorney checklist markdown")
 
     # Compare subcommand
     compare_parser = subparsers.add_parser("compare", help="Compare two contract versions")
@@ -72,7 +71,9 @@ def main():
         print("=" * 60)
         print(f"Legal Risk Index: {res.risk_overview.legal_risk_index}/100 [{res.risk_overview.risk_level.value}]")
         print(f"Clauses Analyzed: {res.risk_overview.total_clauses}")
-        print(f"High Risk: {res.risk_overview.high_risk_count} | Medium Risk: {res.risk_overview.medium_risk_count} | Low Risk: {res.risk_overview.low_risk_count}")
+        print(
+            f"High Risk: {res.risk_overview.high_risk_count} | Medium Risk: {res.risk_overview.medium_risk_count} | Low Risk: {res.risk_overview.low_risk_count}"
+        )
         print(f"PII Redactions: {len(res.anonymization.entities)} sensitive entities masked locally")
         print("\nExecutive Summary:")
         print(res.risk_overview.executive_summary)
@@ -132,6 +133,7 @@ def main():
 
     if args.command == "serve":
         import uvicorn
+
         print(f"🚀 Starting Legal-Ease Web Dashboard on http://{args.host}:{args.port}")
         uvicorn.run("legal_ease.main:app", host=args.host, port=args.port, reload=False)
 

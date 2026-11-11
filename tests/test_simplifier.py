@@ -2,8 +2,8 @@
 Unit tests for the plain-English translation and guidance engine.
 """
 
-from legal_ease.simplifier import PlainEnglishSimplifier
 from legal_ease.models import ClauseCategory, RiskSeverity
+from legal_ease.simplifier import PlainEnglishSimplifier
 
 
 def test_indemnification_simplification():

@@ -5,10 +5,10 @@ Guarantees 100% mathematical parity with the Cython C-implementation while maint
 portable execution across arbitrary platforms.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any
 
 
-def fast_levenshtein_distance(s1: Optional[str], s2: Optional[str]) -> int:
+def fast_levenshtein_distance(s1: str | None, s2: str | None) -> int:
     """
     Computes Levenshtein edit distance using dynamic programming with O(min(m, n)) space.
     Defensively handles None and empty string inputs.
@@ -35,7 +35,7 @@ def fast_levenshtein_distance(s1: Optional[str], s2: Optional[str]) -> int:
     return previous_row[-1]
 
 
-def fast_token_similarity(s1: Optional[str], s2: Optional[str]) -> float:
+def fast_token_similarity(s1: str | None, s2: str | None) -> float:
     """
     Computes token-based Jaccard similarity between two texts.
     Returns a float from 0.0 (disjoint) to 1.0 (identical token sets).
@@ -59,7 +59,7 @@ def fast_token_similarity(s1: Optional[str], s2: Optional[str]) -> float:
     return float(inter) / float(union) if union > 0 else 0.0
 
 
-def get_cython_engine_status() -> Dict[str, Any]:
+def get_cython_engine_status() -> dict[str, Any]:
     """Returns fallback status when native C-binaries are not loaded."""
     return {
         "compiled": False,

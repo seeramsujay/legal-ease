@@ -4,7 +4,6 @@ Demystifies dense contractual provisions for freelancers, contractors, and SMBs.
 Provides direct explanations of operational consequences and redline negotiation tips.
 """
 
-from typing import Tuple, List, Optional
 from legal_ease.models import ClauseCategory, RiskSeverity
 
 
@@ -30,10 +29,10 @@ class PlainEnglishSimplifier:
         self,
         category: ClauseCategory,
         severity: RiskSeverity,
-        title: Optional[str],
-        text: Optional[str],
-        traps: Optional[List[str]],
-    ) -> Tuple[str, str, str]:
+        title: str | None,
+        text: str | None,
+        traps: list[str] | None,
+    ) -> tuple[str, str, str]:
         """
         Generate (plain_english_summary, what_it_means_for_you, negotiation_tip).
         All returned strings are strictly non-null and conversational.
@@ -62,9 +61,7 @@ class PlainEnglishSimplifier:
                     "Outlines mutual protection against third-party claims, requiring each party to cover the other "
                     "if their own fault causes legal liability."
                 )
-                impact = (
-                    "Provides standard defense coverage if your direct actions cause third-party losses."
-                )
+                impact = "Provides standard defense coverage if your direct actions cause third-party losses."
                 tip = (
                     "Confirm the indemnity includes an obligation to provide prompt written notice of claims "
                     "and grants you control over the legal defense."
@@ -73,7 +70,10 @@ class PlainEnglishSimplifier:
 
         # 2. Limitation of Liability
         if category == ClauseCategory.LIMITATION_OF_LIABILITY or "liability" in lower:
-            if "Uncapped / Asymmetric Liability Trap" in trap_list or severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL):
+            if "Uncapped / Asymmetric Liability Trap" in trap_list or severity in (
+                RiskSeverity.HIGH,
+                RiskSeverity.CRITICAL,
+            ):
                 summary = (
                     "The counterparty strictly restricts the maximum damages you can ever collect from them, "
                     "while leaving your personal financial liability completely unlimited."
@@ -91,9 +91,7 @@ class PlainEnglishSimplifier:
                     "Caps direct damages and prevents either party from claiming lost profits, speculative losses, "
                     "or consequential damages."
                 )
-                impact = (
-                    "Protects both parties from massive runaway liability beyond the actual contract value."
-                )
+                impact = "Protects both parties from massive runaway liability beyond the actual contract value."
                 tip = "Ensure the cap applies equally to both sides and does not carve out excessive exceptions."
             return summary, impact, tip
 
@@ -113,7 +111,9 @@ class PlainEnglishSimplifier:
                     "and ensure any hearing takes place in your local jurisdiction or virtually over video."
                 )
             else:
-                summary = "Establishes the legal procedures and location for resolving disagreements between the parties."
+                summary = (
+                    "Establishes the legal procedures and location for resolving disagreements between the parties."
+                )
                 impact = "Sets expectations for where legal battles would take place if disputes escalate."
                 tip = "Make sure the chosen jurisdiction and governing law is reasonable and accessible for you."
             return summary, impact, tip
@@ -134,13 +134,19 @@ class PlainEnglishSimplifier:
                     "for termination for convenience, an immediate kill-fee covering work completed, and a 15-day cure period for breach."
                 )
             else:
-                summary = "Defines how either party can formally exit the agreement and specifies required notice periods."
+                summary = (
+                    "Defines how either party can formally exit the agreement and specifies required notice periods."
+                )
                 impact = "Governs the orderly wrap-up, transition of deliverables, and final payments upon project conclusion."
                 tip = "Verify that all outstanding invoices are payable immediately upon early termination."
             return summary, impact, tip
 
         # 5. Intellectual Property
-        if category == ClauseCategory.INTELLECTUAL_PROPERTY or "intellectual property" in lower or "work for hire" in lower:
+        if (
+            category == ClauseCategory.INTELLECTUAL_PROPERTY
+            or "intellectual property" in lower
+            or "work for hire" in lower
+        ):
             if "Pre-Existing IP Assignment Trap" in trap_list or severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL):
                 summary = (
                     "Assigns ownership of everything you deliver, including your prior tools, libraries, code templates, "

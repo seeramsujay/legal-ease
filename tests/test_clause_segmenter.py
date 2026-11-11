@@ -5,7 +5,6 @@ Unit tests for the structural contract parser and clause segmenter.
 from legal_ease.clause_segmenter import ClauseSegmenter
 from legal_ease.models import ClauseCategory
 
-
 SAMPLE_NUMBERED_CONTRACT = """
 1. INDEMNIFICATION AND HOLD HARMLESS
 Contractor agrees to indemnify Company from all claims.

@@ -4,15 +4,15 @@ Answers user questions regarding contract terms with mandatory disclaimers,
 clause citations, and optional LLM conversational intelligence (Gemini Flash-Lite, Nemotron, OpenAI).
 """
 
-import re
-from typing import List, Dict, Optional, Any
-from legal_ease.models import ChatResponse
-from legal_ease.guardrails import get_standard_disclaimer, validate_chat_query
+from typing import Any
+
+from legal_ease.anonymizer import PIIAnonymizer
 from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
+from legal_ease.guardrails import get_standard_disclaimer, validate_chat_query
+from legal_ease.llm_client import NemotronClient
+from legal_ease.models import ChatResponse
 from legal_ease.risk_analyzer import RiskAnalyzer
 from legal_ease.simplifier import PlainEnglishSimplifier
-from legal_ease.anonymizer import PIIAnonymizer
-from legal_ease.llm_client import NemotronClient
 
 
 class LegalAssistant:
@@ -23,7 +23,7 @@ class LegalAssistant:
     Optionally routes queries through Gemini Flash-Lite / Nemotron / OpenAI for deep conversational synthesis.
     """
 
-    def __init__(self, llm_client: Optional[NemotronClient] = None) -> None:
+    def __init__(self, llm_client: NemotronClient | None = None) -> None:
         self.segmenter = ClauseSegmenter()
         self.analyzer = RiskAnalyzer()
         self.simplifier = PlainEnglishSimplifier()
@@ -32,10 +32,10 @@ class LegalAssistant:
 
     async def answer_query_async(
         self,
-        query: Optional[str],
-        contract_text: Optional[str] = "",
-        clauses_context: Optional[List[Dict[str, Any]]] = None,
-        history: Optional[List[Dict[str, str]]] = None,
+        query: str | None,
+        contract_text: str | None = "",
+        clauses_context: list[dict[str, Any]] | None = None,
+        history: list[dict[str, str]] | None = None,
     ) -> ChatResponse:
         """
         Processes a user query against contract context and generates a grounded response.
@@ -57,23 +57,25 @@ class LegalAssistant:
 
         # Build context if not provided
         if not clauses_context and safe_contract_text:
-            raw_clauses: List[RawClause] = self.segmenter.segment(safe_contract_text)
+            raw_clauses: list[RawClause] = self.segmenter.segment(safe_contract_text)
             clauses_context = []
             for c in raw_clauses:
                 eval_res = self.analyzer.evaluate_clause(c)
                 summary, impact, tip = self.simplifier.simplify(
                     c.category, eval_res.severity, c.title, c.text, eval_res.traps
                 )
-                clauses_context.append({
-                    "id": c.clause_id,
-                    "section_title": c.title,
-                    "category": c.category.value,
-                    "original_text": c.text,
-                    "risk_score": eval_res.risk_score,
-                    "plain_english_summary": summary,
-                    "what_it_means_for_you": impact,
-                    "negotiation_tip": tip,
-                })
+                clauses_context.append(
+                    {
+                        "id": c.clause_id,
+                        "section_title": c.title,
+                        "category": c.category.value,
+                        "original_text": c.text,
+                        "risk_score": eval_res.risk_score,
+                        "plain_english_summary": summary,
+                        "what_it_means_for_you": impact,
+                        "negotiation_tip": tip,
+                    }
+                )
 
         # Check if LLM is configured for deep conversational reasoning
         if self.llm_client.is_configured() and safe_contract_text:
@@ -86,7 +88,7 @@ class LegalAssistant:
             )
             if llm_answer:
                 # Identify referenced clauses
-                referenced: List[str] = []
+                referenced: list[str] = []
                 if clauses_context:
                     for c in clauses_context:
                         sec_name = c.get("section_title", "")
@@ -103,20 +105,19 @@ class LegalAssistant:
         # Local deterministic assistant fallback
         return self._answer_locally(safe_query, clauses_context)
 
-    def _answer_locally(
-        self, query: str, clauses_context: Optional[List[Dict[str, Any]]]
-    ) -> ChatResponse:
+    def _answer_locally(self, query: str, clauses_context: list[dict[str, Any]] | None) -> ChatResponse:
         """Local rule-based conversational triage when remote LLM is offline."""
         q_lower = query.lower()
-        referenced_clauses: List[str] = []
-        findings: List[str] = []
-        risk_warning: Optional[str] = None
+        referenced_clauses: list[str] = []
+        findings: list[str] = []
+        risk_warning: str | None = None
 
         # 1. Check for Termination & Payment on Cancellation
         if any(w in q_lower for w in ["terminate", "cancel", "kill", "fire", "quit", "leave", "cure"]):
             if clauses_context:
                 term_clauses = [
-                    c for c in clauses_context
+                    c
+                    for c in clauses_context
                     if c.get("category") == "termination" or "terminat" in c.get("section_title", "").lower()
                 ]
                 for c in term_clauses:
@@ -132,7 +133,8 @@ class LegalAssistant:
         if any(w in q_lower for w in ["sue", "sued", "lawsuit", "liable", "liability", "indemn", "damage", "fault"]):
             if clauses_context:
                 indem_clauses = [
-                    c for c in clauses_context
+                    c
+                    for c in clauses_context
                     if c.get("category") in ("indemnification", "limitation_of_liability")
                     or any(k in c.get("section_title", "").lower() for k in ["indemn", "liabilit"])
                 ]
@@ -149,11 +151,16 @@ class LegalAssistant:
                     risk_warning = "CRITICAL: Contract contains high-exposure unilateral indemnity or uncapped liability provisions."
 
         # 3. Check for Intellectual Property, Ownership & Deliverables
-        if any(w in q_lower for w in ["own", "ownership", "ip", "code", "work for hire", "deliverable", "copyright", "patent"]):
+        if any(
+            w in q_lower
+            for w in ["own", "ownership", "ip", "code", "work for hire", "deliverable", "copyright", "patent"]
+        ):
             if clauses_context:
                 ip_clauses = [
-                    c for c in clauses_context
-                    if c.get("category") == "intellectual_property" or "intellectual" in c.get("section_title", "").lower()
+                    c
+                    for c in clauses_context
+                    if c.get("category") == "intellectual_property"
+                    or "intellectual" in c.get("section_title", "").lower()
                 ]
                 for c in ip_clauses:
                     referenced_clauses.append(c.get("section_title", "IP Provision"))
@@ -168,7 +175,8 @@ class LegalAssistant:
         if any(w in q_lower for w in ["compete", "competition", "non-compete", "restrict", "solicit"]):
             if clauses_context:
                 nc_clauses = [
-                    c for c in clauses_context
+                    c
+                    for c in clauses_context
                     if c.get("category") == "restrictive_covenants" or "compete" in c.get("section_title", "").lower()
                 ]
                 for c in nc_clauses:
@@ -184,7 +192,8 @@ class LegalAssistant:
         if any(w in q_lower for w in ["pay", "payment", "money", "rate", "fee", "invoice", "late", "net 30", "net 60"]):
             if clauses_context:
                 pay_clauses = [
-                    c for c in clauses_context
+                    c
+                    for c in clauses_context
                     if c.get("category") == "payment_terms" or "payment" in c.get("section_title", "").lower()
                 ]
                 for c in pay_clauses:

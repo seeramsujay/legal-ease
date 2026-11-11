@@ -5,7 +5,8 @@ article headers, legal titles, and categorizing legal domains via high-speed reg
 """
 
 import re
-from typing import List, Tuple, Optional, Pattern
+from re import Pattern
+
 from legal_ease.models import ClauseCategory
 
 
@@ -13,6 +14,7 @@ class RawClause:
     """
     Represents an unanalyzed, segmented contract provision.
     """
+
     def __init__(
         self,
         clause_id: int,
@@ -117,7 +119,7 @@ CATEGORY_KEYWORDS = {
 }
 
 # Pre-compile single-pass regex unions for each category for instant O(1) matching
-_COMPILED_CATEGORY_MATCHERS: List[Tuple[ClauseCategory, Pattern[str]]] = [
+_COMPILED_CATEGORY_MATCHERS: list[tuple[ClauseCategory, Pattern[str]]] = [
     (
         cat,
         re.compile(
@@ -138,7 +140,7 @@ class ClauseSegmenter:
     detecting numbered sections, headings, and legal categories.
     """
 
-    HEADER_PATTERNS: List[Pattern[str]] = [
+    HEADER_PATTERNS: list[Pattern[str]] = [
         # E.g. "§ 1.0 Services" or "Section 1. Indemnification" or "Article 2: Limitation of Liability"
         re.compile(
             r"^(?:Section|Article|Clause|§)\s+([0-9IVXLCDM\.]+)\s*[\.\:\-]?\s*([^\n\r]+)",
@@ -156,7 +158,7 @@ class ClauseSegmenter:
         ),
     ]
 
-    def segment(self, text: Optional[str]) -> List[RawClause]:
+    def segment(self, text: str | None) -> list[RawClause]:
         """
         Segment a document into titled raw clauses.
         Falls back to paragraph chunking if formal headers are absent.
@@ -167,7 +169,7 @@ class ClauseSegmenter:
             return []
 
         # Find all candidate header split points
-        split_points: List[Tuple[int, str]] = []
+        split_points: list[tuple[int, str]] = []
 
         for pattern in self.HEADER_PATTERNS:
             for match in pattern.finditer(safe_text):
@@ -187,7 +189,7 @@ class ClauseSegmenter:
         split_points.sort(key=lambda x: x[0])
 
         # Deduplicate overlapping or adjacent split points
-        unique_splits: List[Tuple[int, str]] = []
+        unique_splits: list[tuple[int, str]] = []
         last_pos = -1
         for pos, title in split_points:
             if pos > last_pos:
@@ -196,7 +198,7 @@ class ClauseSegmenter:
 
         # If headers were successfully identified, slice text into clauses
         if unique_splits:
-            clauses: List[RawClause] = []
+            clauses: list[RawClause] = []
             # Check if there is a preamble before the first header
             first_idx = unique_splits[0][0]
             if first_idx > 50:
@@ -212,11 +214,7 @@ class ClauseSegmenter:
 
             for i in range(len(unique_splits)):
                 curr_idx, title = unique_splits[i]
-                next_idx = (
-                    unique_splits[i + 1][0]
-                    if i + 1 < len(unique_splits)
-                    else len(safe_text)
-                )
+                next_idx = unique_splits[i + 1][0] if i + 1 < len(unique_splits) else len(safe_text)
                 clause_text = safe_text[curr_idx:next_idx].strip()
                 cat = self._classify_category(title, clause_text)
                 clauses.append(
@@ -245,7 +243,7 @@ class ClauseSegmenter:
             )
         return clauses
 
-    def _classify_category(self, title: Optional[str], text: Optional[str]) -> ClauseCategory:
+    def _classify_category(self, title: str | None, text: str | None) -> ClauseCategory:
         """
         Categorize a clause based on heading and textual semantics using pre-compiled regex unions.
         Evaluates the title and the first 400 characters of the clause text.

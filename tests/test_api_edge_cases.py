@@ -5,10 +5,11 @@ sanitization defenses, and conversational query routing.
 """
 
 import io
-import pytest
+
 from fastapi.testclient import TestClient
+
 from legal_ease.main import app, llm_client
-from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
+from legal_ease.sample_contracts import FREELANCE_HIGH_RISK
 
 client = TestClient(app)
 
@@ -33,7 +34,9 @@ class TestAnalyzeEndpointEdgeCases:
         assert res.status_code == 422
 
     def test_analyze_auto_title_inference(self):
-        contract_text = "MUTUAL CONFIDENTIALITY AND NONDISCLOSURE AGREEMENT\n1. Scope. Parties agree to exchange trade secrets."
+        contract_text = (
+            "MUTUAL CONFIDENTIALITY AND NONDISCLOSURE AGREEMENT\n1. Scope. Parties agree to exchange trade secrets."
+        )
         res = client.post("/api/analyze", json={"text": contract_text})
         assert res.status_code == 200
         data = res.json()
@@ -218,9 +221,17 @@ class TestSettingsAndHealthTelemetry:
         assert res.status_code == 200
         data = res.json()
         required_keys = [
-            "status", "service", "version", "vertical", "provider",
-            "llm_configured", "api_key_source", "nemotron_configured",
-            "model", "cython_accelerated", "acceleration_info",
+            "status",
+            "service",
+            "version",
+            "vertical",
+            "provider",
+            "llm_configured",
+            "api_key_source",
+            "nemotron_configured",
+            "model",
+            "cython_accelerated",
+            "acceleration_info",
         ]
         for key in required_keys:
             assert key in data, f"Missing key '{key}' in /api/health telemetry"

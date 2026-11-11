@@ -5,15 +5,14 @@ with prioritized questions for counsel, statutory exposure warnings, and redline
 Minimizes billed attorney consultation hours by presenting pre-triaged legal findings.
 """
 
-from typing import List, Optional
+from legal_ease.guardrails import get_attorney_prep_note, get_standard_disclaimer
 from legal_ease.models import (
-    ClauseAnalysis,
-    RiskOverview,
     AttorneyChecklist,
     AttorneyQuestion,
+    ClauseAnalysis,
+    RiskOverview,
     RiskSeverity,
 )
-from legal_ease.guardrails import get_attorney_prep_note, get_standard_disclaimer
 
 
 class AttorneyChecklistGenerator:
@@ -25,9 +24,9 @@ class AttorneyChecklistGenerator:
 
     def generate(
         self,
-        document_title: Optional[str],
-        risk_overview: Optional[RiskOverview],
-        clauses: Optional[List[ClauseAnalysis]],
+        document_title: str | None,
+        risk_overview: RiskOverview | None,
+        clauses: list[ClauseAnalysis] | None,
     ) -> AttorneyChecklist:
         """
         Generate structured attorney questions and Markdown consultation brief.
@@ -46,14 +45,12 @@ class AttorneyChecklistGenerator:
             executive_summary="Empty analysis.",
         )
 
-        questions: List[AttorneyQuestion] = []
-        top_exposures: List[str] = []
-        priority_negotiation_items: List[str] = []
+        questions: list[AttorneyQuestion] = []
+        top_exposures: list[str] = []
+        priority_negotiation_items: list[str] = []
 
         # Filter high and critical risk clauses
-        high_risk_clauses = [
-            c for c in clause_list if c.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
-        ]
+        high_risk_clauses = [c for c in clause_list if c.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)]
 
         # 1. Examine High-Risk Clauses for Targeted Attorney Questions
         for clause in high_risk_clauses:
@@ -207,7 +204,7 @@ class AttorneyChecklistGenerator:
         md_lines = [
             f"# ⚖️ Attorney Consultation Brief: {safe_title.upper()}",
             f"> **Legal-Ease Risk Index:** {overview.legal_risk_index}/100 ({overview.risk_level.value} Exposure)",
-            f"> **Prepared by:** Legal-Ease Automated Triage",
+            "> **Prepared by:** Legal-Ease Automated Triage",
             "",
             "## NOTICE FOR COUNSEL",
             get_attorney_prep_note(),
@@ -220,31 +217,39 @@ class AttorneyChecklistGenerator:
         for f in overview.critical_findings:
             md_lines.append(f"- {f}")
 
-        md_lines.extend([
-            "",
-            "## RECOMMENDED QUESTIONS FOR LEGAL COUNSEL",
-        ])
+        md_lines.extend(
+            [
+                "",
+                "## RECOMMENDED QUESTIONS FOR LEGAL COUNSEL",
+            ]
+        )
         for idx, q in enumerate(questions, 1):
             clause_ref = f" *(Originating Clause #{q.related_clause_id})*" if q.related_clause_id else ""
-            md_lines.extend([
-                f"### {idx}. [{q.category}]{clause_ref}",
-                f"**Question:** {q.question}",
-                f"**Why It Matters:** {q.why_it_matters}",
-                f"**Suggested Fallback/Redline:** `{q.recommended_fallback}`",
-                "",
-            ])
+            md_lines.extend(
+                [
+                    f"### {idx}. [{q.category}]{clause_ref}",
+                    f"**Question:** {q.question}",
+                    f"**Why It Matters:** {q.why_it_matters}",
+                    f"**Suggested Fallback/Redline:** `{q.recommended_fallback}`",
+                    "",
+                ]
+            )
 
-        md_lines.extend([
-            "## PRIORITY COUNTER-PROPOSAL NEGOTIATION CHECKLIST",
-        ])
+        md_lines.extend(
+            [
+                "## PRIORITY COUNTER-PROPOSAL NEGOTIATION CHECKLIST",
+            ]
+        )
         for item in priority_negotiation_items:
             md_lines.append(f"- [ ] {item}")
 
-        md_lines.extend([
-            "",
-            "---",
-            f"*{get_standard_disclaimer()}*",
-        ])
+        md_lines.extend(
+            [
+                "",
+                "---",
+                f"*{get_standard_disclaimer()}*",
+            ]
+        )
 
         return AttorneyChecklist(
             document_title=safe_title,

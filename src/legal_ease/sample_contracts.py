@@ -3,7 +3,6 @@ Curated realistic contract samples for demonstration, benchmarking, and instant 
 Includes realistic PII entities and intentional legal risk traps.
 """
 
-from typing import List
 from legal_ease.models import SampleContract
 
 FREELANCE_HIGH_RISK = """INDEPENDENT CONTRACTOR SERVICES AGREEMENT
@@ -127,7 +126,7 @@ This Agreement shall be construed under the laws of the State of New York, witho
 """
 
 
-def get_all_samples() -> List[SampleContract]:
+def get_all_samples() -> list[SampleContract]:
     """Return all pre-loaded sample contracts."""
     return [
         SampleContract(

@@ -35,7 +35,7 @@ Legal-Ease strictly respects the hackathon directive that solutions **must provi
 
 1. **Mandatory Disclaimer Banner:** Visible on every screen (`<aside role="note">`) stating:
    > *"Non-Advisory Tool: Legal-Ease provides educational contract literacy, semantic obfuscation detection, and negotiation issue-spotting. It does not provide legal advice or substitute for a licensed attorney."*
-2. **Deterministic Guardrails Engine ([`guardrails.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/guardrails.py)):**
+2. **Deterministic Guardrails Engine ([`guardrails.py`](src/legal_ease/guardrails.py)):**
    * Pre-execution prompt injection defense: Blocks adversarial jailbreaks attempting to force the AI to act as a licensed attorney or give binding advice.
    * Cites contract clauses directly rather than offering independent legal opinions.
 3. **The "Attorney Triage" Paradigm:**
@@ -45,11 +45,11 @@ Legal-Ease strictly respects the hackathon directive that solutions **must provi
 
 ## 🚀 Out-of-the-Box Innovations & Original Approaches
 
-1. **100% Client-Side / Edge PII Shielding ([`anonymizer.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/anonymizer.py)):**
+1. **100% Client-Side / Edge PII Shielding ([`anonymizer.py`](src/legal_ease/anonymizer.py)):**
    * Protects client privacy by deterministically redacting all names, emails, addresses, SSNs/EINs, and dollar figures before any LLM processing.
 2. **Confidence-Based Selective Escalation (90% Cost & Latency Reduction):**
    * Unambiguous clauses are evaluated locally in sub-milliseconds. Only ambiguous clauses (< 75% confidence) escalate to Google Gemini 3.1 Flash-Lite, saving 90% in tokens and API costs.
-3. **Hardware Acceleration via Cython C-Extensions ([`fast_ops.pyx`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/fast_ops.pyx)):**
+3. **Hardware Acceleration via Cython C-Extensions ([`fast_ops.pyx`](src/legal_ease/fast_ops.pyx)):**
    * Compiles core string alignment, Levenshtein distance, and sub-word token similarity algorithms into native C binaries (`-O3`), executing comparisons in under 2ms.
 4. **Dual Environment Allowance + BYOK Fallback:**
    * Evaluators can run the live production application immediately with zero setup via server environment variable auto-discovery. Users can also provide custom keys (BYOK).

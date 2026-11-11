@@ -5,16 +5,15 @@ and computes overall contractual trajectory (SAFER / MORE_RISK / NEUTRAL).
 Accelerated by native Cython C-extensions when available.
 """
 
-from typing import List, Dict, Tuple, Optional
-from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
-from legal_ease.risk_analyzer import RiskAnalyzer
-from legal_ease.fast_ops_bridge import compute_similarity, is_cython_accelerated
+from legal_ease.clause_segmenter import ClauseSegmenter
+from legal_ease.fast_ops_bridge import compute_similarity
 from legal_ease.guardrails import get_standard_disclaimer
 from legal_ease.models import (
-    ContractComparisonResponse,
     ClauseDiff,
+    ContractComparisonResponse,
     DiffChangeType,
 )
+from legal_ease.risk_analyzer import RiskAnalyzer
 
 
 class ContractComparator:
@@ -29,7 +28,7 @@ class ContractComparator:
         self.segmenter = ClauseSegmenter()
         self.analyzer = RiskAnalyzer()
 
-    def _text_similarity(self, s1: Optional[str], s2: Optional[str]) -> float:
+    def _text_similarity(self, s1: str | None, s2: str | None) -> float:
         """
         Calculates lexical token similarity between two clause texts using the
         Cython C-extension (or pure Python fallback).
@@ -38,12 +37,12 @@ class ContractComparator:
 
     def compare(
         self,
-        text_v1: Optional[str] = None,
-        text_v2: Optional[str] = None,
-        title_v1: Optional[str] = "Original Version",
-        title_v2: Optional[str] = "Revised Proposal",
-        doc_v1_text: Optional[str] = None,
-        doc_v2_text: Optional[str] = None,
+        text_v1: str | None = None,
+        text_v2: str | None = None,
+        title_v1: str | None = "Original Version",
+        title_v2: str | None = "Revised Proposal",
+        doc_v1_text: str | None = None,
+        doc_v2_text: str | None = None,
     ) -> ContractComparisonResponse:
         """
         Execute full comparison and trajectory analysis between two drafts.
@@ -73,9 +72,9 @@ class ContractComparator:
         else:
             trajectory = "NEUTRAL"
 
-        clause_diffs: List[ClauseDiff] = []
+        clause_diffs: list[ClauseDiff] = []
         matched_v2_indices = set()
-        summary_of_changes: List[str] = []
+        summary_of_changes: list[str] = []
 
         # Compare clauses in v1 against potential matches in v2
         for i, c1 in enumerate(clauses_v1):
@@ -112,9 +111,7 @@ class ContractComparator:
                     else:
                         notes = "Wording adjusted with neutral risk impact."
 
-                    summary_of_changes.append(
-                        f"Modified '{c1.title}': {notes}"
-                    )
+                    summary_of_changes.append(f"Modified '{c1.title}': {notes}")
 
                 clause_diffs.append(
                     ClauseDiff(
@@ -131,9 +128,7 @@ class ContractComparator:
                 )
             else:
                 # Clause in v1 was removed in v2
-                summary_of_changes.append(
-                    f"Removed '{c1.title}' (Previously scored {e1.risk_score}/100 Risk)."
-                )
+                summary_of_changes.append(f"Removed '{c1.title}' (Previously scored {e1.risk_score}/100 Risk).")
                 clause_diffs.append(
                     ClauseDiff(
                         section_title=c1.title,
@@ -152,9 +147,7 @@ class ContractComparator:
         for j, c2 in enumerate(clauses_v2):
             if j not in matched_v2_indices:
                 e2 = evals_v2[j]
-                summary_of_changes.append(
-                    f"Added new provision '{c2.title}' (Assessed at {e2.risk_score}/100 Risk)."
-                )
+                summary_of_changes.append(f"Added new provision '{c2.title}' (Assessed at {e2.risk_score}/100 Risk).")
                 clause_diffs.append(
                     ClauseDiff(
                         section_title=c2.title,

@@ -6,14 +6,14 @@ Optimized with pre-compiled regex objects for high-velocity linear scanning.
 """
 
 import re
-from typing import List, Tuple, Optional, Dict, Pattern
+
+from legal_ease.clause_segmenter import RawClause
 from legal_ease.models import (
     ClauseCategory,
-    RiskSeverity,
     RiskOverview,
+    RiskSeverity,
 )
-from legal_ease.clause_segmenter import RawClause
-from legal_ease.semantic_analyzer import get_semantic_model, SemanticClauseInsight
+from legal_ease.semantic_analyzer import SemanticClauseInsight, get_semantic_model
 
 # --- Pre-compiled Heuristic Regex Patterns for Maximum Single-Pass Velocity ---
 
@@ -108,26 +108,25 @@ _RE_SUBJECTIVE_WITHHOLDING = re.compile(
 )
 
 # Latent boilerplate risk terminology
-LATENT_RISK_KEYWORDS = [
-    "liable", "liability", "indemn", "waive", "remedy", "breach", "damages", "forfeit"
-]
+LATENT_RISK_KEYWORDS = ["liable", "liability", "indemn", "waive", "remedy", "breach", "damages", "forfeit"]
 
 
 class ClauseRiskEvaluation:
     """Detailed risk assessment telemetry for a single clause."""
+
     def __init__(
         self,
         risk_score: int,
         severity: RiskSeverity,
-        reasons: List[str],
-        traps: List[str],
+        reasons: list[str],
+        traps: list[str],
         confidence: float = 0.95,
         confidence_label: str = "HIGH",
-        confidence_reasons: Optional[List[str]] = None,
+        confidence_reasons: list[str] | None = None,
         is_twisted: bool = False,
         obfuscation_score: float = 0.0,
-        archetype_scores: Optional[Dict[str, float]] = None,
-        detected_euphemisms: Optional[List[str]] = None,
+        archetype_scores: dict[str, float] | None = None,
+        detected_euphemisms: list[str] | None = None,
     ) -> None:
         self.risk_score = risk_score
         self.severity = severity
@@ -152,7 +151,7 @@ class RiskAnalyzer:
     def __init__(self) -> None:
         self.semantic_model = get_semantic_model()
 
-    def evaluate_clause(self, clause: Optional[RawClause]) -> ClauseRiskEvaluation:
+    def evaluate_clause(self, clause: RawClause | None) -> ClauseRiskEvaluation:
         """
         Evaluate a single raw clause and compute its risk score, traps, and confidence.
         Guarantees safe handling if clause is None or has empty content.
@@ -169,9 +168,9 @@ class RiskAnalyzer:
 
         text = clause.text.lower() if clause.text else ""
         score = 15  # Baseline standard score
-        reasons: List[str] = []
-        traps: List[str] = []
-        confidence_reasons: List[str] = []
+        reasons: list[str] = []
+        traps: list[str] = []
+        confidence_reasons: list[str] = []
         confidence = 0.95  # Default high confidence for straightforward clauses
 
         # --- Semantic Vector & Obfuscation Analysis ---
@@ -225,10 +224,7 @@ class RiskAnalyzer:
                 )
 
         # 2. Limitation of Liability traps
-        if (
-            clause.category == ClauseCategory.LIMITATION_OF_LIABILITY
-            or "limitation of liability" in text
-        ):
+        if clause.category == ClauseCategory.LIMITATION_OF_LIABILITY or "limitation of liability" in text:
             has_disparity = bool(_RE_LIABILITY_DISPARITY.search(text))
             has_contractor_unlimited = bool(_RE_CONTRACTOR_UNLIMITED.search(text))
             caps_at_nominal = bool(_RE_NOMINAL_CAP.search(text))
@@ -253,20 +249,14 @@ class RiskAnalyzer:
                 reasons.append("Standard exclusion of indirect, special, or consequential damages.")
 
         # 3. Dispute Resolution, Arbitration & Class Action Waiver
-        if (
-            clause.category == ClauseCategory.DISPUTE_RESOLUTION
-            or "arbitrat" in text
-            or "class action" in text
-        ):
+        if clause.category == ClauseCategory.DISPUTE_RESOLUTION or "arbitrat" in text or "class action" in text:
             has_mandatory_arbitration = bool(_RE_MANDATORY_ARBITRATION.search(text))
             has_class_action_waiver = bool(_RE_CLASS_ACTION_WAIVER.search(text))
             has_jury_waiver = bool(_RE_JURY_WAIVER.search(text))
 
             if has_class_action_waiver:
                 score += 35
-                reasons.append(
-                    "Class Action Waiver: Forfeits the ability to join collective or class-wide claims."
-                )
+                reasons.append("Class Action Waiver: Forfeits the ability to join collective or class-wide claims.")
                 traps.append("Class Action Waiver")
             if has_mandatory_arbitration:
                 score += 30
@@ -283,7 +273,9 @@ class RiskAnalyzer:
             has_immediate_convenience = bool(_RE_IMMEDIATE_CONVENIENCE.search(text))
             has_no_cure = bool(_RE_NO_CURE.search(text))
 
-            if (has_immediate_convenience or "immediately" in text) and (has_no_cure or "without prior notice" in text or "without cause" in text):
+            if (has_immediate_convenience or "immediately" in text) and (
+                has_no_cure or "without prior notice" in text or "without cause" in text
+            ):
                 score += 55
                 reasons.append(
                     "Unilateral Immediate Termination: Counterparty can cancel on a moment's notice without providing a cure period."
@@ -292,9 +284,7 @@ class RiskAnalyzer:
                 confidence = 0.95
             elif has_immediate_convenience:
                 score += 35
-                reasons.append(
-                    "Termination for Convenience: Counterparty can cancel without cause."
-                )
+                reasons.append("Termination for Convenience: Counterparty can cancel without cause.")
             elif "terminat" in text:
                 score += 15
                 reasons.append("Defines conditions, notice requirements, and post-termination procedures.")
@@ -324,11 +314,7 @@ class RiskAnalyzer:
                 reasons.append("Work-Made-For-Hire: All created deliverables transfer automatically upon creation.")
 
         # 6. Restrictive Covenants / Non-Compete
-        if (
-            clause.category == ClauseCategory.RESTRICTIVE_COVENANTS
-            or "non-compete" in text
-            or "non compete" in text
-        ):
+        if clause.category == ClauseCategory.RESTRICTIVE_COVENANTS or "non-compete" in text or "non compete" in text:
             has_long_term = bool(_RE_LONG_TERM_NON_COMPETE.search(text))
             has_broad_geo = bool(_RE_BROAD_GEO_SCOPE.search(text))
 
@@ -365,7 +351,9 @@ class RiskAnalyzer:
             found_latent = [kw for kw in LATENT_RISK_KEYWORDS if kw in text]
             if found_latent:
                 score += 25
-                reasons.append(f"Uncategorized clause contains potential liability triggers: {', '.join(found_latent)}.")
+                reasons.append(
+                    f"Uncategorized clause contains potential liability triggers: {', '.join(found_latent)}."
+                )
                 confidence = min(confidence, 0.65)
                 confidence_reasons.append(
                     f"Unclassified clause with legal risk terminology ({', '.join(found_latent)}). Escalation recommended."
@@ -384,7 +372,9 @@ class RiskAnalyzer:
             )
             score += 35
             confidence = min(confidence, 0.67)
-            confidence_reasons.append("Semantic vectors indicate disguised predatory obligations. LLM escalation recommended.")
+            confidence_reasons.append(
+                "Semantic vectors indicate disguised predatory obligations. LLM escalation recommended."
+            )
 
         # Ambiguity check: dense text (>120 words) with borderline score (35-55) and no traps
         word_count = len(text.split())
@@ -427,9 +417,7 @@ class RiskAnalyzer:
             detected_euphemisms=semantic.detected_euphemisms,
         )
 
-    def calculate_overview(
-        self, evaluations: Optional[List[ClauseRiskEvaluation]]
-    ) -> RiskOverview:
+    def calculate_overview(self, evaluations: list[ClauseRiskEvaluation] | None) -> RiskOverview:
         """
         Calculates document-wide risk index, average confidence, and executive findings.
         Applies non-linear weighting (2.2x) to high/critical risk provisions to reflect true hazard.
@@ -460,21 +448,20 @@ class RiskAnalyzer:
             for e in evaluations
         )
         total_weight = sum(
-            (2.2 if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL) else 1.0)
-            for e in evaluations
+            (2.2 if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL) else 1.0) for e in evaluations
         )
         raw_index = int(weighted_sum / max(1.0, total_weight))
         risk_index = max(10, min(98, raw_index))
 
         avg_conf = sum(e.confidence for e in evaluations) / max(1, total_clauses)
 
-        all_traps: List[str] = []
+        all_traps: list[str] = []
         for e in evaluations:
             for trap in e.traps:
                 if trap not in all_traps:
                     all_traps.append(trap)
 
-        critical_findings: List[str] = []
+        critical_findings: list[str] = []
         if all_traps:
             for trap in all_traps[:5]:
                 critical_findings.append(f"Detected {trap} requiring negotiation or legal counsel.")
