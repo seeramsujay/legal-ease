@@ -5,21 +5,22 @@ semantic vector archetype projection, obfuscation detection, confidence evaluati
 and optional LLM escalation routing (Gemini Flash Lite, Nemotron, OpenAI).
 """
 
-from datetime import datetime, timezone
 import uuid
-from typing import Optional, List, Dict, Any
+from datetime import UTC, datetime
+from typing import Any
+
+from legal_ease.anonymizer import PIIAnonymizer
+from legal_ease.checklist_generator import AttorneyChecklistGenerator
+from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
+from legal_ease.guardrails import get_standard_disclaimer, sanitize_input_text
+from legal_ease.llm_client import NemotronClient
 from legal_ease.models import (
-    ContractAnalysisResponse,
     ClauseAnalysis,
+    ContractAnalysisResponse,
     RiskSeverity,
 )
-from legal_ease.guardrails import get_standard_disclaimer, sanitize_input_text
-from legal_ease.anonymizer import PIIAnonymizer
-from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
-from legal_ease.risk_analyzer import RiskAnalyzer, ClauseRiskEvaluation
+from legal_ease.risk_analyzer import ClauseRiskEvaluation, RiskAnalyzer
 from legal_ease.simplifier import PlainEnglishSimplifier
-from legal_ease.checklist_generator import AttorneyChecklistGenerator
-from legal_ease.llm_client import NemotronClient
 
 
 class LegalAnalysisPipeline:
@@ -29,7 +30,7 @@ class LegalAnalysisPipeline:
     Applies local-first verification with confidence-based LLM escalation.
     """
 
-    def __init__(self, llm_client: Optional[NemotronClient] = None) -> None:
+    def __init__(self, llm_client: NemotronClient | None = None) -> None:
         self.anonymizer = PIIAnonymizer()
         self.segmenter = ClauseSegmenter()
         self.risk_analyzer = RiskAnalyzer()
@@ -38,7 +39,7 @@ class LegalAnalysisPipeline:
         self.llm_client = llm_client or NemotronClient()
 
     async def analyze_async(
-        self, raw_text: Optional[str], document_title: Optional[str] = None
+        self, raw_text: str | None, document_title: str | None = None
     ) -> ContractAnalysisResponse:
         """
         Asynchronously executes the full legal analysis with LLM escalation on low confidence or twisted drafting.
@@ -57,11 +58,11 @@ class LegalAnalysisPipeline:
         anon_result = self.anonymizer.anonymize(clean_text)
 
         # Step 2: Clause Segmentation (using anonymized text for absolute privacy)
-        raw_clauses: List[RawClause] = self.segmenter.segment(anon_result.redacted_text)
+        raw_clauses: list[RawClause] = self.segmenter.segment(anon_result.redacted_text)
 
         # Step 3: Local Risk Evaluation, Semantic Vector Matching & Confidence Scoring
-        clause_evaluations: List[ClauseRiskEvaluation] = []
-        analyzed_clauses: List[ClauseAnalysis] = []
+        clause_evaluations: list[ClauseRiskEvaluation] = []
+        analyzed_clauses: list[ClauseAnalysis] = []
         escalated_count = 0
 
         for c in raw_clauses:
@@ -69,10 +70,12 @@ class LegalAnalysisPipeline:
             clause_evaluations.append(eval_res)
 
             # Check if local confidence is below threshold AND LLM is configured
-            is_low_confidence = eval_res.confidence < self.llm_client.config.confidence_threshold
+            is_low_confidence = (
+                eval_res.confidence < self.llm_client.config.confidence_threshold
+            )
             can_escalate = self.llm_client.is_configured() and is_low_confidence
 
-            deep_data: Optional[Dict[str, Any]] = None
+            deep_data: dict[str, Any] | None = None
             if can_escalate:
                 # Escalate PII-redacted clause to LLM (Gemini Flash Lite / Nemotron / OpenAI)
                 deep_data = await self.llm_client.deep_reason_clause(
@@ -93,19 +96,31 @@ class LegalAnalysisPipeline:
                     severity = eval_res.severity
 
                 traps = deep_data.get("detected_traps", eval_res.traps)
-                summary = deep_data.get("plain_english_summary") or self.simplifier.simplify(
-                    c.category, severity, c.title, c.text, traps
-                )[0]
-                impact = deep_data.get("what_it_means_for_you") or self.simplifier.simplify(
-                    c.category, severity, c.title, c.text, traps
-                )[1]
-                tip = deep_data.get("negotiation_tip") or self.simplifier.simplify(
-                    c.category, severity, c.title, c.text, traps
-                )[2]
+                summary = (
+                    deep_data.get("plain_english_summary")
+                    or self.simplifier.simplify(
+                        c.category, severity, c.title, c.text, traps
+                    )[0]
+                )
+                impact = (
+                    deep_data.get("what_it_means_for_you")
+                    or self.simplifier.simplify(
+                        c.category, severity, c.title, c.text, traps
+                    )[1]
+                )
+                tip = (
+                    deep_data.get("negotiation_tip")
+                    or self.simplifier.simplify(
+                        c.category, severity, c.title, c.text, traps
+                    )[2]
+                )
 
                 if "gemini" in self.llm_client.config.model_name.lower():
                     analysis_source = "GEMINI_DEEP_REASONING"
-                elif "openai" in getattr(self.llm_client.config, "provider", "").lower() or "gpt" in self.llm_client.config.model_name.lower():
+                elif (
+                    "openai" in getattr(self.llm_client.config, "provider", "").lower()
+                    or "gpt" in self.llm_client.config.model_name.lower()
+                ):
                     analysis_source = "OPENAI_DEEP_REASONING"
                 else:
                     analysis_source = "NEMOTRON_DEEP_REASONING"
@@ -117,7 +132,9 @@ class LegalAnalysisPipeline:
                 )
                 confidence = 0.95
                 confidence_label = "HIGH"
-                risk_reasons = eval_res.reasons + [f"AI Synthesis: {deep_data.get('reasoning', '')}"]
+                risk_reasons = eval_res.reasons + [
+                    f"AI Synthesis: {deep_data.get('reasoning', '')}"
+                ]
             else:
                 summary, impact, tip = self.simplifier.simplify(
                     c.category, eval_res.severity, c.title, c.text, eval_res.traps
@@ -161,10 +178,14 @@ class LegalAnalysisPipeline:
         overview.escalated_clauses_count = escalated_count
 
         if self.llm_client.is_configured():
-            overview.ai_model_used = f"Local Privacy Shield + {self.llm_client.config.model_name}"
+            overview.ai_model_used = (
+                f"Local Privacy Shield + {self.llm_client.config.model_name}"
+            )
 
         # Step 5: Generate Attorney Brief & Checklist
-        attorney_brief = self.checklist_gen.generate(doc_title, overview, analyzed_clauses)
+        attorney_brief = self.checklist_gen.generate(
+            doc_title, overview, analyzed_clauses
+        )
 
         return ContractAnalysisResponse(
             document_id=doc_id,
@@ -173,11 +194,11 @@ class LegalAnalysisPipeline:
             risk_overview=overview,
             clauses=analyzed_clauses,
             attorney_checklist=attorney_brief,
-            analyzed_at=datetime.now(timezone.utc).isoformat(),
+            analyzed_at=datetime.now(UTC).isoformat(),
         )
 
     def analyze(
-        self, raw_text: Optional[str], document_title: Optional[str] = None
+        self, raw_text: str | None, document_title: str | None = None
     ) -> ContractAnalysisResponse:
         """
         Synchronously executes the full legal analysis.

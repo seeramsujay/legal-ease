@@ -6,6 +6,7 @@ with Cython hardware acceleration indicators, Gemini Flash-Lite / Nemotron LLM e
 environment variable key allowance detection, and semantic twisted drafting radar.
 """
 
+
 def get_dashboard_html() -> str:
     """Return the complete, self-contained, accessible, flashy dashboard HTML."""
     return """<!DOCTYPE html>
@@ -46,7 +47,7 @@ def get_dashboard_html() -> str:
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,600&display=swap');
-    
+
     :root {
       --font-display: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-body: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -60,7 +61,7 @@ def get_dashboard_html() -> str:
     body {
       font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background-color: #030712;
-      background-image: 
+      background-image:
         radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
         radial-gradient(circle at 85% 20%, rgba(217, 70, 239, 0.10) 0%, transparent 40%),
         radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
@@ -71,7 +72,7 @@ def get_dashboard_html() -> str:
       font-family: var(--font-display);
       letter-spacing: -0.025em;
     }
-    
+
     code, pre, .font-mono {
       font-family: var(--font-mono);
     }
@@ -273,7 +274,7 @@ def get_dashboard_html() -> str:
   <!-- Header -->
   <header role="banner" class="relative z-20 glass-panel border-b border-slate-800/80 sticky top-0 shadow-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-      
+
       <!-- Brand & Telemetry Badges -->
       <div class="flex items-center space-x-3.5">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 ring-1 ring-white/20 text-lg font-bold" aria-hidden="true">
@@ -295,7 +296,7 @@ def get_dashboard_html() -> str:
 
       <!-- Controls & Engine Status -->
       <div class="flex items-center space-x-3">
-        
+
         <!-- PII Status Pill -->
         <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true"></span>
@@ -391,7 +392,7 @@ def get_dashboard_html() -> str:
   <!-- ==================== ACCESSIBLE AI / LLM SETTINGS MODAL ==================== -->
   <div id="llm-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
     <div class="glass-panel w-full max-w-xl rounded-2xl p-6 space-y-5 border border-slate-700 shadow-2xl">
-      
+
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white text-base" aria-hidden="true">
@@ -406,7 +407,7 @@ def get_dashboard_html() -> str:
       </div>
 
       <div class="space-y-4 text-xs">
-        
+
         <!-- Environment Key Status Banner -->
         <div id="modal-env-status" class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 space-y-1">
           <div class="font-bold flex items-center gap-1.5 text-emerald-300">
@@ -645,7 +646,7 @@ def get_dashboard_html() -> str:
 
     <!-- ==================== TAB 1: ANALYZER ==================== -->
     <section id="tab-analyzer" role="tabpanel" aria-labelledby="nav-tab-analyzer" class="space-y-6">
-      
+
       <!-- Beginner Quick-Start Guide (Accessible to any experience level) -->
       <div class="rounded-2xl p-5 border border-indigo-500/30 bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-slate-900/80 backdrop-blur-xl shadow-lg space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -693,7 +694,7 @@ def get_dashboard_html() -> str:
             </h2>
             <p class="text-xs text-slate-400">Local-first analysis accelerated by Cython C-extensions with Gemini Flash-Lite / Nemotron deep reasoning</p>
           </div>
-          
+
           <!-- Sample Contract Selectors -->
           <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Load Sample Contracts">
             <span class="text-xs text-slate-400 font-bold mr-1">Sample:</span>
@@ -791,11 +792,11 @@ def get_dashboard_html() -> str:
         <!-- Executive Risk Scorecard -->
         <div class="glass-panel rounded-2xl p-6 shadow-xl space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
-            
+
             <!-- Risk Gauge with High Contrast & Circular Radial SVG -->
             <div class="flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-800 text-center relative overflow-hidden shadow-inner">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Legal Risk Index</span>
-              
+
               <div class="relative w-36 h-36 flex items-center justify-center my-2" aria-label="Risk Score Meter">
                 <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <!-- Background Track -->
@@ -986,7 +987,7 @@ def get_dashboard_html() -> str:
               <h3 class="font-display text-base font-extrabold text-white mt-2" id="compare-scores-summary"></h3>
             </div>
           </div>
-          
+
           <div class="space-y-2">
             <h4 class="text-xs font-extrabold text-slate-300 uppercase tracking-wider">Key Redline Shifts:</h4>
             <ul id="compare-changes-list" class="space-y-1 text-xs text-slate-200 font-medium"></ul>
@@ -1111,7 +1112,7 @@ def get_dashboard_html() -> str:
 
     <!-- ==================== TAB 5: PRODUCT DETAILS & ESTIMATED SAVINGS (ROI) ==================== -->
     <section id="tab-details" role="tabpanel" aria-labelledby="nav-tab-details" class="hidden space-y-8" tabindex="0">
-      
+
       <!-- ==================== HACKATHON PROBLEM STATEMENT & 7 USE CASES ACCORDION ==================== -->
       <div class="glass-panel rounded-3xl p-6 sm:p-8 space-y-6 border border-indigo-500/30 shadow-2xl bg-gradient-to-br from-slate-900/90 via-indigo-950/25 to-purple-950/30">
         <div class="space-y-2">
@@ -1132,7 +1133,7 @@ def get_dashboard_html() -> str:
         <div class="space-y-3">
           <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400">1-to-1 Mapping to All 7 Official Potential Use Cases:</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            
+
             <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
               <div class="font-bold text-white flex items-center justify-between">
                 <span>1. Simplifying Complex Legal Documents</span>
@@ -1214,7 +1215,7 @@ def get_dashboard_html() -> str:
             </span>
           </h1>
           <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
-            Over <strong>85% of freelancers, independent contractors, and small business owners</strong> execute commercial contracts without professional legal review because attorneys bill <strong>$350–$650/hour</strong>. 
+            Over <strong>85% of freelancers, independent contractors, and small business owners</strong> execute commercial contracts without professional legal review because attorneys bill <strong>$350–$650/hour</strong>.
             Legal-Ease democratizes legal literacy: delivering sub-second, privacy-first contract triage, exposing predatory traps, and generating lawyer-ready negotiation briefs completely free.
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
@@ -1267,10 +1268,10 @@ def get_dashboard_html() -> str:
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
+
           <!-- Sliders / Controls (Left column) -->
           <div class="lg:col-span-6 space-y-5 bg-slate-900/50 p-5 rounded-2xl border border-slate-800/70">
-            
+
             <!-- Slider 1: Contracts Reviewed Per Month -->
             <div class="space-y-2">
               <div class="flex justify-between items-center text-xs">
@@ -1331,7 +1332,7 @@ def get_dashboard_html() -> str:
 
           <!-- Calculated Results Display (Right column) -->
           <div class="lg:col-span-6 flex flex-col justify-between space-y-4 bg-gradient-to-br from-slate-900/90 via-indigo-950/30 to-purple-950/30 p-6 rounded-2xl border border-indigo-500/30 shadow-inner">
-            
+
             <div class="space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Estimated Annual ROI</span>
@@ -1436,9 +1437,9 @@ def get_dashboard_html() -> str:
       <!-- Who It Empowers (Target Personas) -->
       <div class="space-y-4">
         <h2 class="text-lg sm:text-xl font-bold text-white">Engineered For Real-World Commercial Work</h2>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
+
           <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-3">
             <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl font-bold">
               👨‍💻
@@ -2119,7 +2120,7 @@ def get_dashboard_html() -> str:
           twistedBadge = `<span class="px-2.5 py-0.5 text-[11px] font-extrabold rounded-md badge-twisted">🌀 Twisted Phrasing (${Math.round((clause.obfuscation_score || 0.5) * 100)}% Obfuscation)</span>`;
         }
 
-        const trapsHtml = (clause.detected_traps || []).map(t => 
+        const trapsHtml = (clause.detected_traps || []).map(t =>
           `<span class="inline-block bg-rose-500/25 text-rose-200 border border-rose-500/40 text-[11px] font-bold px-2 py-0.5 rounded-md mr-1 mt-1">⚠️ ${t}</span>`
         ).join('');
 
@@ -2344,7 +2345,7 @@ def get_dashboard_html() -> str:
         badge.className = 'px-3 py-1 text-xs font-bold rounded-full badge-medium uppercase';
       }
 
-      document.getElementById('compare-scores-summary').innerText = 
+      document.getElementById('compare-scores-summary').innerText =
         `Original Version Risk: ${data.risk_index_v1}/100 ➔ Revised Proposal Risk: ${data.risk_index_v2}/100`;
 
       const list = document.getElementById('compare-changes-list');
@@ -2360,7 +2361,7 @@ def get_dashboard_html() -> str:
       data.clause_diffs.forEach(diff => {
         const card = document.createElement('div');
         card.className = 'glass-card rounded-xl p-4 space-y-2 border border-slate-800';
-        
+
         let typeBadge = '';
         if (diff.change_type === 'ADDED') typeBadge = '<span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/25 text-blue-200 border border-blue-500/40">ADDED</span>';
         else if (diff.change_type === 'REMOVED') typeBadge = '<span class="px-2 py-0.5 rounded text-xs font-bold bg-rose-500/25 text-rose-200 border border-rose-500/40">REMOVED</span>';
@@ -2429,7 +2430,7 @@ def get_dashboard_html() -> str:
     function appendChatMessage(sender, text, warning, cited, model) {
       const container = document.getElementById('chat-messages');
       const div = document.createElement('div');
-      
+
       if (sender === 'user') {
         div.className = 'ml-auto max-w-lg p-3.5 bg-indigo-600 text-white rounded-xl shadow-md text-xs leading-relaxed font-medium';
         div.innerText = text;

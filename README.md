@@ -1,9 +1,11 @@
 # ⚖️ Legal-Ease: Privacy-First AI Legal Navigator & Contract Risk Analyzer
 
-[![Tests](https://img.shields.io/badge/tests-154%20passed-success)](https://github.com/seeramsujay/legal-ease)
+[![Tests](https://img.shields.io/badge/tests-157%20passed-success)](https://github.com/seeramsujay/legal-ease)
+[![Super-Linter](https://github.com/seeramsujay/legal-ease/actions/workflows/super-linter.yml/badge.svg)](https://github.com/seeramsujay/legal-ease/actions/workflows/super-linter.yml)
+[![MegaLinter](https://github.com/seeramsujay/legal-ease/actions/workflows/mega-linter.yml/badge.svg)](https://github.com/seeramsujay/legal-ease/actions/workflows/mega-linter.yml)
+[![CodeRabbit](https://img.shields.io/badge/CodeRabbit-Review%20Ready-blue)](https://coderabbit.ai)
 [![Repo Size](https://img.shields.io/badge/repo%20size-%3C%201%20MB%20(limit%2010MB)-blue)](https://github.com/seeramsujay/legal-ease)
 [![Package Manager](https://img.shields.io/badge/package%20managers-uv%20%7C%20pnpm%20only-indigo)](https://github.com/seeramsujay/legal-ease)
-[![Single Branch](https://img.shields.io/badge/branch-main%20only-teal)](https://github.com/seeramsujay/legal-ease)
 [![Vertical](https://img.shields.io/badge/Hackathon%20Vertical-AI%20for%20Legal%20Assistance%20%26%20Access-orange)](https://github.com/seeramsujay/legal-ease)
 [![Performance](https://img.shields.io/badge/Speed-Cython%20C--Compiled%20(-O3)-cyan)](https://github.com/seeramsujay/legal-ease)
 [![Accessibility](https://img.shields.io/badge/Accessibility-WCAG%202.1%20AAA%2FAA-emerald)](https://github.com/seeramsujay/legal-ease)
@@ -34,13 +36,13 @@ Legal-Ease is architected to address every single potential use case stipulated 
 
 | # | Official Potential Use Case | Implemented Code Module | Live User Interface Location | Technical Solution Details |
 | :-: | :--- | :--- | :--- | :--- |
-| **1** | **Simplifying complex legal documents** | [`simplifier.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/simplifier.py) | **Tab 1:** Contract Risk Analyzer → Clause Cards | Converts archaic Latinate legalese into 8th-grade conversational plain English and actionable *"What It Means For You"* consequence breakdowns. |
-| **2** | **Comparing contracts, agreements, or policies** | [`comparator.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/comparator.py) & [`fast_ops.pyx`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/fast_ops.pyx) | **Tab 2:** Version Comparator (`Alt + 2`) | Side-by-side Cython C-accelerated comparative diffing identifying added, deleted, and modified clauses with a dynamic net risk trajectory (*SAFER* vs *MORE_RISK*). |
-| **3** | **Highlighting important clauses, obligations, risks, or inconsistencies** | [`risk_analyzer.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/risk_analyzer.py) & [`semantic_analyzer.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/semantic_analyzer.py) | **Tab 1:** Risk Overview & Semantic Radar | Scores risk from 0 to 100 via character n-gram cosine projections and exposes 8 predatory legal traps (e.g. unilateral indemnity, uncapped liability, sneak IP grabs). |
-| **4** | **Answering questions based on provided legal documents** | [`assistant.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/assistant.py) | **Tab 3:** Legal Navigator AI (`Alt + 3`) | Context-grounded conversational Q&A powered by Google Gemini 2.0 Flash-Lite / Nemotron, citing exact section numbers with anti-injection guardrails. |
-| **5** | **Helping users understand their options and potential next steps** | [`simplifier.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/simplifier.py) & [`llm_client.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/llm_client.py) | **Tab 1:** Negotiation Guidance & Redline Fallbacks | Delivers tactical negotiation alternatives and 1-click bilateral redline counter-proposals ready to paste into negotiation emails. |
-| **6** | **Generating summaries, checklists, or other actionable outputs** | [`pipeline.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/pipeline.py) & [`checklist_generator.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/checklist_generator.py) | **Tab 1:** Executive Summary & Priority Checklists | Produces a holistic Legal Risk Index, categorized risk severity matrices, and exportable priority counter-proposal negotiation checklists. |
-| **7** | **Helping users prepare information or questions for a legal professional** | [`checklist_generator.py`](file:///home/suzaykid/Projects/legal-ease/src/legal_ease/checklist_generator.py) | **Tab 1:** Attorney Consultation Brief Modal & **Tab 5** | Automatically synthesizes an attorney-grade **Consultation Brief (.md)** with prioritized statutory questions, cutting $500/hr billed consultation hours into focused 15-minute reviews. |
+| **1** | **Simplifying complex legal documents** | [`simplifier.py`](src/legal_ease/simplifier.py) | **Tab 1:** Contract Risk Analyzer → Clause Cards | Converts archaic Latinate legalese into 8th-grade conversational plain English and actionable *"What It Means For You"* consequence breakdowns. |
+| **2** | **Comparing contracts, agreements, or policies** | [`comparator.py`](src/legal_ease/comparator.py) & [`fast_ops.pyx`](src/legal_ease/fast_ops.pyx) | **Tab 2:** Version Comparator (`Alt + 2`) | Side-by-side Cython C-accelerated comparative diffing identifying added, deleted, and modified clauses with a dynamic net risk trajectory (*SAFER* vs *MORE_RISK*). |
+| **3** | **Highlighting important clauses, obligations, risks, or inconsistencies** | [`risk_analyzer.py`](src/legal_ease/risk_analyzer.py) & [`semantic_analyzer.py`](src/legal_ease/semantic_analyzer.py) | **Tab 1:** Risk Overview & Semantic Radar | Scores risk from 0 to 100 via character n-gram cosine projections and exposes 8 predatory legal traps (e.g. unilateral indemnity, uncapped liability, sneak IP grabs). |
+| **4** | **Answering questions based on provided legal documents** | [`assistant.py`](src/legal_ease/assistant.py) | **Tab 3:** Legal Navigator AI (`Alt + 3`) | Context-grounded conversational Q&A powered by Google Gemini 2.0 Flash-Lite / Nemotron, citing exact section numbers with anti-injection guardrails. |
+| **5** | **Helping users understand their options and potential next steps** | [`simplifier.py`](src/legal_ease/simplifier.py) & [`llm_client.py`](src/legal_ease/llm_client.py) | **Tab 1:** Negotiation Guidance & Redline Fallbacks | Delivers tactical negotiation alternatives and 1-click bilateral redline counter-proposals ready to paste into negotiation emails. |
+| **6** | **Generating summaries, checklists, or other actionable outputs** | [`pipeline.py`](src/legal_ease/pipeline.py) & [`checklist_generator.py`](src/legal_ease/checklist_generator.py) | **Tab 1:** Executive Summary & Priority Checklists | Produces a holistic Legal Risk Index, categorized risk severity matrices, and exportable priority counter-proposal negotiation checklists. |
+| **7** | **Helping users prepare information or questions for a legal professional** | [`checklist_generator.py`](src/legal_ease/checklist_generator.py) | **Tab 1:** Attorney Consultation Brief Modal & **Tab 5** | Automatically synthesizes an attorney-grade **Consultation Brief (.md)** with prioritized statutory questions, cutting $500/hr billed consultation hours into focused 15-minute reviews. |
 
 ---
 
@@ -188,8 +190,8 @@ Sending entire 30-page commercial contracts to cloud LLMs wastes money, spikes l
 
 ## ♿ 4. Extreme Accessibility (WCAG 2.1 Level AAA) & Universal Design
 
-> For the comprehensive Voluntary Product Accessibility Template (VPAT) and technical audit, see [****](file:///home/suzaykid/Projects/legal-ease/ACCESSIBILITY.md).  
-> For the complete hackathon alignment mapping guide, see [****](file:///home/suzaykid/Projects/legal-ease/PROBLEM_STATEMENT_ALIGNMENT.md).
+> For the comprehensive Voluntary Product Accessibility Template (VPAT) and technical audit, see [**ACCESSIBILITY.md**](ACCESSIBILITY.md).  
+> For the complete hackathon alignment mapping guide, see [**PROBLEM_STATEMENT_ALIGNMENT.md**](PROBLEM_STATEMENT_ALIGNMENT.md).
 
 The Legal-Ease dashboard combines futuristic glassmorphic visuals with strict **Universal Design**, zero-experience beginner onboarding, and **WCAG 2.1 Level AAA/AA** compliance:
 

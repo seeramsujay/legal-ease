@@ -5,10 +5,11 @@ sanitization defenses, and conversational query routing.
 """
 
 import io
-import pytest
+
 from fastapi.testclient import TestClient
+
 from legal_ease.main import app, llm_client
-from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
+from legal_ease.sample_contracts import FREELANCE_HIGH_RISK
 
 client = TestClient(app)
 
@@ -48,7 +49,9 @@ class TestAnalyzeFileEndpointEdgeCases:
     def test_upload_valid_txt_file(self):
         content = b"1. Term. This agreement shall remain in effect for two years."
         files = {"file": ("contract.txt", io.BytesIO(content), "text/plain")}
-        res = client.post("/api/analyze-file", files=files, data={"title": "Custom TXT Title"})
+        res = client.post(
+            "/api/analyze-file", files=files, data={"title": "Custom TXT Title"}
+        )
         assert res.status_code == 200
         data = res.json()
         assert data["risk_overview"]["total_clauses"] >= 1
@@ -89,7 +92,9 @@ class TestCompareEndpointEdgeCases:
         assert res.status_code == 400
         data = res.json()
         assert data["error"] is True
-        assert "Both original (v1) and revised (v2) texts are required" in data["detail"]
+        assert (
+            "Both original (v1) and revised (v2) texts are required" in data["detail"]
+        )
 
     def test_compare_missing_v2_returns_400(self):
         res = client.post(
@@ -180,7 +185,9 @@ class TestChatEndpointEdgeCases:
         )
         assert res.status_code == 200
         data = res.json()
-        assert "Restrictive Covenants" in data["answer"] or "Non-Compete" in data["answer"]
+        assert (
+            "Restrictive Covenants" in data["answer"] or "Non-Compete" in data["answer"]
+        )
 
     def test_chat_payment_terms_and_delays(self):
         contract_with_pay = "1. Payment. Client shall pay invoices Net 90 days."
@@ -218,9 +225,17 @@ class TestSettingsAndHealthTelemetry:
         assert res.status_code == 200
         data = res.json()
         required_keys = [
-            "status", "service", "version", "vertical", "provider",
-            "llm_configured", "api_key_source", "nemotron_configured",
-            "model", "cython_accelerated", "acceleration_info",
+            "status",
+            "service",
+            "version",
+            "vertical",
+            "provider",
+            "llm_configured",
+            "api_key_source",
+            "nemotron_configured",
+            "model",
+            "cython_accelerated",
+            "acceleration_info",
         ]
         for key in required_keys:
             assert key in data, f"Missing key '{key}' in /api/health telemetry"

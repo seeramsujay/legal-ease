@@ -5,11 +5,13 @@ Unit tests for Cython C-extension acceleration and Python fallback parity.
 from legal_ease.fast_ops_bridge import (
     compute_levenshtein,
     compute_similarity,
-    is_cython_accelerated,
     get_acceleration_info,
+    is_cython_accelerated,
 )
 from legal_ease.fast_ops_py import (
     fast_levenshtein_distance as py_levenshtein,
+)
+from legal_ease.fast_ops_py import (
     fast_token_similarity as py_similarity,
 )
 
@@ -52,6 +54,7 @@ def test_token_similarity_parity():
 
 def test_health_reports_cython(test_client=None):
     from fastapi.testclient import TestClient
+
     from legal_ease.main import app
 
     client = TestClient(app)

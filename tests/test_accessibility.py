@@ -7,9 +7,9 @@ Verifies compliance with WCAG 2.1 AAA & AA principles:
 - Robust (W3C ARIA Tablist Pattern, Modal Dialogs, Live Regions)
 """
 
-import re
 import pytest
 from fastapi.testclient import TestClient
+
 from legal_ease.main import app
 from legal_ease.ui import get_dashboard_html
 
@@ -49,11 +49,19 @@ class TestWCAGConformance:
         Ensures screen readers can navigate via landmarks.
         """
         assert 'role="banner"' in self.html, "Missing header landmark role='banner'"
-        assert 'id="main-content"' in self.html, "Missing main landmark id='main-content'"
+        assert (
+            'id="main-content"' in self.html
+        ), "Missing main landmark id='main-content'"
         assert 'role="main"' in self.html, "Missing main landmark role='main'"
-        assert 'role="contentinfo"' in self.html, "Missing footer landmark role='contentinfo'"
-        assert 'role="tablist"' in self.html, "Missing navigation tablist landmark role='tablist'"
-        assert 'role="note"' in self.html, "Missing non-advisory legal notice aside landmark"
+        assert (
+            'role="contentinfo"' in self.html
+        ), "Missing footer landmark role='contentinfo'"
+        assert (
+            'role="tablist"' in self.html
+        ), "Missing navigation tablist landmark role='tablist'"
+        assert (
+            'role="note"' in self.html
+        ), "Missing non-advisory legal notice aside landmark"
 
     def test_skip_to_content_link(self):
         """
@@ -121,7 +129,7 @@ class TestWCAGConformance:
         """
         assert 'role="dialog"' in self.html
         assert 'aria-modal="true"' in self.html
-        assert 'aria-labelledby=' in self.html
+        assert "aria-labelledby=" in self.html
 
     def test_screen_reader_live_regions(self):
         """
@@ -146,5 +154,9 @@ class TestWCAGConformance:
         ]
         for inp_id in input_ids:
             has_for_label = f'for="{inp_id}"' in self.html
-            has_aria_label = f'id="{inp_id}"' in self.html and 'aria-label=' in self.html
-            assert has_for_label or has_aria_label, f"Missing accessible label for {inp_id}"
+            has_aria_label = (
+                f'id="{inp_id}"' in self.html and "aria-label=" in self.html
+            )
+            assert (
+                has_for_label or has_aria_label
+            ), f"Missing accessible label for {inp_id}"

@@ -5,8 +5,8 @@ before any external reasoning or LLM analysis takes place. Guarantees 100% zero 
 """
 
 import re
-from typing import Dict, List, Tuple, Optional
-from legal_ease.models import RedactedEntity, AnonymizationResult
+
+from legal_ease.models import AnonymizationResult, RedactedEntity
 
 
 class PIIAnonymizer:
@@ -17,9 +17,7 @@ class PIIAnonymizer:
     """
 
     # Email pattern: compliant with RFC 5322 token standards
-    EMAIL_PATTERN = re.compile(
-        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
-    )
+    EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 
     # Phone number patterns: US, International (+XX), formatted with hyphens, periods, or spaces
     PHONE_PATTERN = re.compile(
@@ -27,14 +25,10 @@ class PIIAnonymizer:
     )
 
     # SSN / Tax ID / EIN: Standard federal 9-digit formats (XXX-XX-XXXX or XX-XXXXXXX)
-    SSN_EIN_PATTERN = re.compile(
-        r"\b(?:\d{3}-\d{2}-\d{4}|\d{2}-\d{7})\b"
-    )
+    SSN_EIN_PATTERN = re.compile(r"\b(?:\d{3}-\d{2}-\d{4}|\d{2}-\d{7})\b")
 
     # Credit Card pattern: Major payment cards (13-19 digits with standard separators)
-    CREDIT_CARD_PATTERN = re.compile(
-        r"\b(?:\d{4}[-\s]?){3}\d{1,4}\b"
-    )
+    CREDIT_CARD_PATTERN = re.compile(r"\b(?:\d{4}[-\s]?){3}\d{1,4}\b")
 
     # Monetary values: Standard multi-currency formats ($12,500, USD 50,000, €1,200.00, £9,000)
     MONEY_PATTERN = re.compile(
@@ -60,7 +54,7 @@ class PIIAnonymizer:
         re.IGNORECASE,
     )
 
-    def anonymize(self, text: Optional[str]) -> AnonymizationResult:
+    def anonymize(self, text: str | None) -> AnonymizationResult:
         """
         Scan and redact all sensitive identifiers from contract text.
         Returns the sanitized text, detailed entity list, and privacy metrics.
@@ -83,8 +77,8 @@ class PIIAnonymizer:
                 privacy_score=100.0,
             )
 
-        entities: List[RedactedEntity] = []
-        entity_counts: Dict[str, int] = {
+        entities: list[RedactedEntity] = []
+        entity_counts: dict[str, int] = {
             "EMAIL": 0,
             "PHONE": 0,
             "SSN_TAX_ID": 0,
@@ -95,8 +89,10 @@ class PIIAnonymizer:
         }
 
         # Value-to-token map ensures that identical identifiers receive consistent pseudonym tokens
-        value_to_token: Dict[str, str] = {}
-        spans_to_replace: List[Tuple[int, int, str, str, str]] = []  # (start, end, original, token, type)
+        value_to_token: dict[str, str] = {}
+        spans_to_replace: list[tuple[int, int, str, str, str]] = (
+            []
+        )  # (start, end, original, token, type)
 
         # 1. Detect Emails
         for m in self.EMAIL_PATTERN.finditer(safe_text):
@@ -157,7 +153,9 @@ class PIIAnonymizer:
             val = m.group()
             if val not in value_to_token:
                 entity_counts["FINANCIAL"] += 1
-                value_to_token[val] = f"[CONFIDENTIAL_AMOUNT_{entity_counts['FINANCIAL']}]"
+                value_to_token[val] = (
+                    f"[CONFIDENTIAL_AMOUNT_{entity_counts['FINANCIAL']}]"
+                )
             spans_to_replace.append(
                 (m.start(), m.end(), val, value_to_token[val], "FINANCIAL")
             )
@@ -167,7 +165,9 @@ class PIIAnonymizer:
             party_name = m.group(1).strip()
             if len(party_name) > 2 and party_name not in value_to_token:
                 entity_counts["PARTY_NAME"] += 1
-                value_to_token[party_name] = f"[PARTY_ENTITY_{entity_counts['PARTY_NAME']}]"
+                value_to_token[party_name] = (
+                    f"[PARTY_ENTITY_{entity_counts['PARTY_NAME']}]"
+                )
                 start = m.start(1)
                 end = m.end(1)
                 spans_to_replace.append(
@@ -189,7 +189,7 @@ class PIIAnonymizer:
         spans_to_replace.sort(key=lambda x: x[0])
 
         # Filter overlapping spans (keep the earlier/longer span)
-        non_overlapping: List[Tuple[int, int, str, str, str]] = []
+        non_overlapping: list[tuple[int, int, str, str, str]] = []
         last_end = -1
         for start, end, orig, tok, etype in spans_to_replace:
             if start >= last_end:
@@ -197,7 +197,7 @@ class PIIAnonymizer:
                 last_end = end
 
         # Construct sanitized redacted text
-        redacted_parts: List[str] = []
+        redacted_parts: list[str] = []
         curr_idx = 0
         for start, end, orig, tok, etype in non_overlapping:
             redacted_parts.append(safe_text[curr_idx:start])
@@ -226,7 +226,9 @@ class PIIAnonymizer:
             privacy_score=privacy_score,
         )
 
-    def deanonymize(self, text: Optional[str], entities: Optional[List[RedactedEntity]]) -> str:
+    def deanonymize(
+        self, text: str | None, entities: list[RedactedEntity] | None
+    ) -> str:
         """
         Re-hydrates pseudonym tokens back to original values for local, authorized views.
         Defensively handles None arguments.
@@ -241,5 +243,5 @@ class PIIAnonymizer:
         for ent in sorted(entities, key=lambda e: len(e.token), reverse=True):
             if ent.token and ent.original_value:
                 restored = restored.replace(ent.token, ent.original_value)
-                
+
         return restored

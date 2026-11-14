@@ -2,11 +2,10 @@
 Unit tests for the Semantic Vector & Obfuscation Analysis Engine.
 """
 
-import pytest
-from legal_ease.semantic_analyzer import get_semantic_model, SemanticArchetype
 from legal_ease.clause_segmenter import RawClause
 from legal_ease.models import ClauseCategory
 from legal_ease.risk_analyzer import RiskAnalyzer
+from legal_ease.semantic_analyzer import SemanticArchetype, get_semantic_model
 
 
 def test_semantic_model_archetype_similarity():

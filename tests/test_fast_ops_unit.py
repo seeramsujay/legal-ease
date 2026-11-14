@@ -4,34 +4,51 @@ Verifies numerical equivalence, boundary handling, and algorithmic invariants.
 """
 
 import pytest
-from legal_ease import fast_ops_py
-from legal_ease import fast_ops_bridge
+
+from legal_ease import fast_ops_bridge, fast_ops_py
 
 
 class TestFastOpsPy:
     """Test pure Python fallback implementation of Levenshtein and Jaccard metrics."""
 
     def test_fast_levenshtein_identical_strings(self):
-        assert fast_ops_py.fast_levenshtein_distance("indemnification", "indemnification") == 0
+        assert (
+            fast_ops_py.fast_levenshtein_distance("indemnification", "indemnification")
+            == 0
+        )
         assert fast_ops_py.fast_levenshtein_distance("", "") == 0
 
     def test_fast_levenshtein_empty_and_none(self):
-        assert fast_ops_py.fast_levenshtein_distance("liability", "") == len("liability")
-        assert fast_ops_py.fast_levenshtein_distance("", "arbitration") == len("arbitration")
-        assert fast_ops_py.fast_levenshtein_distance(None, "arbitration") == len("arbitration")
-        assert fast_ops_py.fast_levenshtein_distance("arbitration", None) == len("arbitration")
+        assert fast_ops_py.fast_levenshtein_distance("liability", "") == len(
+            "liability"
+        )
+        assert fast_ops_py.fast_levenshtein_distance("", "arbitration") == len(
+            "arbitration"
+        )
+        assert fast_ops_py.fast_levenshtein_distance(None, "arbitration") == len(
+            "arbitration"
+        )
+        assert fast_ops_py.fast_levenshtein_distance("arbitration", None) == len(
+            "arbitration"
+        )
 
     def test_fast_levenshtein_symmetry(self):
         s1 = "unilateral indemnity"
         s2 = "mutual indemnity agreement"
-        assert fast_ops_py.fast_levenshtein_distance(s1, s2) == fast_ops_py.fast_levenshtein_distance(s2, s1)
+        assert fast_ops_py.fast_levenshtein_distance(
+            s1, s2
+        ) == fast_ops_py.fast_levenshtein_distance(s2, s1)
 
     def test_fast_token_similarity_bounds(self):
-        sim = fast_ops_py.fast_token_similarity("termination for cause", "termination for convenience")
+        sim = fast_ops_py.fast_token_similarity(
+            "termination for cause", "termination for convenience"
+        )
         assert 0.0 <= sim <= 1.0
 
         # Exact match
-        assert fast_ops_py.fast_token_similarity("governing law", "governing law") == 1.0
+        assert (
+            fast_ops_py.fast_token_similarity("governing law", "governing law") == 1.0
+        )
         # Empty match
         assert fast_ops_py.fast_token_similarity("", "") == 1.0
         assert fast_ops_py.fast_token_similarity(None, None) == 1.0

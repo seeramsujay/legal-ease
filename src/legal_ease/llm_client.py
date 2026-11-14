@@ -4,11 +4,12 @@ NVIDIA Nemotron, and OpenAI-Compatible Endpoints with Local-First
 Confidence-Based Escalation Routing and Environment Key Auto-Detection.
 """
 
-import os
 import json
 import logging
+import os
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Any
+
 import httpx
 from pydantic import BaseModel, Field
 
@@ -41,7 +42,7 @@ def _load_env_file() -> None:
 
 _load_env_file()
 
-PROVIDER_PRESETS: Dict[str, Dict[str, Any]] = {
+PROVIDER_PRESETS: dict[str, dict[str, Any]] = {
     "gemini": {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "model_name": "gemini-2.0-flash-lite",
@@ -65,7 +66,10 @@ PROVIDER_PRESETS: Dict[str, Dict[str, Any]] = {
 
 class LLMConfig(BaseModel):
     """Configuration state for remote LLM escalation."""
-    api_key: Optional[str] = Field(default=None, description="API Key for the active provider")
+
+    api_key: str | None = Field(
+        default=None, description="API Key for the active provider"
+    )
     base_url: str = Field(
         default="https://generativelanguage.googleapis.com/v1beta/openai",
         description="API base URL",
@@ -74,13 +78,20 @@ class LLMConfig(BaseModel):
         default="gemini-2.0-flash-lite",
         description="Target model identifier",
     )
-    provider: str = Field(default="gemini", description="Active provider preset: gemini, nemotron, openai, or custom")
-    enabled: bool = Field(default=True, description="Whether remote escalation is active")
+    provider: str = Field(
+        default="gemini",
+        description="Active provider preset: gemini, nemotron, openai, or custom",
+    )
+    enabled: bool = Field(
+        default=True, description="Whether remote escalation is active"
+    )
     confidence_threshold: float = Field(
         default=0.75,
         description="Local confidence score threshold below which analysis is escalated to LLM",
     )
-    api_key_source: str = Field(default="none", description="environment, user_configured, or none")
+    api_key_source: str = Field(
+        default="none", description="environment, user_configured, or none"
+    )
 
 
 class NemotronClient:
@@ -90,16 +101,20 @@ class NemotronClient:
     Reuses connection pools and provides zero-crash error boundaries.
     """
 
-    def __init__(self, config: Optional[LLMConfig] = None) -> None:
+    def __init__(self, config: LLMConfig | None = None) -> None:
         if config:
             self.config = config
             if "nemotron" in self.config.model_name.lower():
                 self.config.provider = "nemotron"
             elif "gpt" in self.config.model_name.lower() or (
-                "openai.com" in self.config.base_url.lower() and "google" not in self.config.base_url.lower()
+                "openai.com" in self.config.base_url.lower()
+                and "google" not in self.config.base_url.lower()
             ):
                 self.config.provider = "openai"
-            elif "gemini" in self.config.model_name.lower() or "googleapis.com" in self.config.base_url.lower():
+            elif (
+                "gemini" in self.config.model_name.lower()
+                or "googleapis.com" in self.config.base_url.lower()
+            ):
                 self.config.provider = "gemini"
         else:
             self.config = self._discover_initial_config()
@@ -125,14 +140,20 @@ class NemotronClient:
 
         for prov in provider_order:
             preset = PROVIDER_PRESETS[prov]
-            vars_to_check = preset["env_vars"] + (["LLM_API_KEY"] if prov == "openai" else [])
+            vars_to_check = preset["env_vars"] + (
+                ["LLM_API_KEY"] if prov == "openai" else []
+            )
             for var in vars_to_check:
                 val = os.getenv(var)
                 if val and val.strip():
                     return LLMConfig(
                         api_key=val.strip(),
-                        base_url=os.getenv(f"{prov.upper()}_BASE_URL", preset["base_url"]),
-                        model_name=os.getenv(f"{prov.upper()}_MODEL_NAME", preset["model_name"]),
+                        base_url=os.getenv(
+                            f"{prov.upper()}_BASE_URL", preset["base_url"]
+                        ),
+                        model_name=os.getenv(
+                            f"{prov.upper()}_MODEL_NAME", preset["model_name"]
+                        ),
                         provider=prov,
                         enabled=True,
                         confidence_threshold=threshold,
@@ -144,7 +165,9 @@ class NemotronClient:
         return LLMConfig(
             api_key=None,
             base_url=os.getenv(f"{target_prov.upper()}_BASE_URL", preset["base_url"]),
-            model_name=os.getenv(f"{target_prov.upper()}_MODEL_NAME", preset["model_name"]),
+            model_name=os.getenv(
+                f"{target_prov.upper()}_MODEL_NAME", preset["model_name"]
+            ),
             provider=target_prov,
             enabled=False,
             confidence_threshold=threshold,
@@ -160,7 +183,7 @@ class NemotronClient:
         """Returns True if a valid API key is present and remote escalation is enabled."""
         return bool(self.config.api_key and self.config.enabled)
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Return clean telemetry regarding current provider, status, and environment allowance."""
         masked_key = None
         if self.config.api_key:
@@ -194,12 +217,12 @@ class NemotronClient:
 
     def update_config(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model_name: Optional[str] = None,
-        enabled: Optional[bool] = None,
-        confidence_threshold: Optional[float] = None,
-        provider: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model_name: str | None = None,
+        enabled: bool | None = None,
+        confidence_threshold: float | None = None,
+        provider: str | None = None,
     ) -> None:
         """Updates provider and endpoint configuration dynamically at runtime."""
         if provider and provider in PROVIDER_PRESETS:
@@ -230,7 +253,9 @@ class NemotronClient:
             else:
                 # User cleared BYOK; try to find an environment key for this provider
                 env_key = None
-                for env_var in PROVIDER_PRESETS.get(self.config.provider, {}).get("env_vars", []):
+                for env_var in PROVIDER_PRESETS.get(self.config.provider, {}).get(
+                    "env_vars", []
+                ):
                     val = os.getenv(env_var)
                     if val and val.strip():
                         env_key = val.strip()
@@ -258,7 +283,7 @@ class NemotronClient:
         if self.config.api_key and enabled is None and api_key is not None:
             self.config.enabled = True
 
-    async def test_connection(self) -> Dict[str, Any]:
+    async def test_connection(self) -> dict[str, Any]:
         """Verify API key and endpoint health with a minimal prompt."""
         if not self.config.api_key:
             return {
@@ -277,7 +302,14 @@ class NemotronClient:
         payload = {
             "model": self.config.model_name,
             "messages": [
-                {"role": "system", "content": "Respond with 'OK'." if not self.config.provider == 'gemini' else "OK"},
+                {
+                    "role": "system",
+                    "content": (
+                        "Respond with 'OK'."
+                        if not self.config.provider == "gemini"
+                        else "OK"
+                    ),
+                },
                 {"role": "user", "content": "Ping"},
             ],
             "max_tokens": 10,
@@ -304,17 +336,17 @@ class NemotronClient:
         except Exception as e:
             return {
                 "success": False,
-                "message": f"Connection error: {str(e)}",
+                "message": f"Connection error: {e!s}",
             }
 
     async def deep_reason_clause(
         self,
-        anonymized_text: Optional[str],
-        section_title: Optional[str],
+        anonymized_text: str | None,
+        section_title: str | None,
         local_category: str,
         local_score: int,
-        local_traps: List[str],
-    ) -> Optional[Dict[str, Any]]:
+        local_traps: list[str],
+    ) -> dict[str, Any] | None:
         """
         Escalates an ambiguous / low-confidence / twisted clause to the active LLM
         (Gemini Flash-Lite / Nemotron / OpenAI) for deep legal synthesis.
@@ -333,7 +365,7 @@ Assigned Category: {local_category}
 Clause Text:
 \"\"\"{safe_text}\"\"\"
 
-Local heuristics scored this clause at {local_score}/100 with potential traps: {', '.join(local_traps) if local_traps else 'None identified'}.
+Local heuristics scored this clause at {local_score}/100 with potential traps: {", ".join(local_traps) if local_traps else "None identified"}.
 However, local confidence was low or borderline due to potential obfuscation or complex drafting.
 
 Provide a rigorous legal synthesis in valid JSON format with the following keys:
@@ -390,16 +422,20 @@ Respond ONLY with valid JSON.
 
     async def chat_completion(
         self,
-        query: Optional[str],
-        anonymized_contract_context: Optional[str],
-        conversation_history: Optional[List[Dict[str, str]]] = None,
-    ) -> Optional[str]:
+        query: str | None,
+        anonymized_contract_context: str | None,
+        conversation_history: list[dict[str, str]] | None = None,
+    ) -> str | None:
         """Direct conversational query using active LLM with contract context."""
         if not self.is_configured():
             return None
 
         safe_query = str(query) if query else ""
-        safe_context = str(anonymized_contract_context)[:6000] if anonymized_contract_context else ""
+        safe_context = (
+            str(anonymized_contract_context)[:6000]
+            if anonymized_contract_context
+            else ""
+        )
 
         provider_title = self.config.provider.title()
         system_prompt = f"""You are Legal-Ease, an expert AI legal navigator powered by {provider_title} designed to help freelancers, contractors, and small business owners understand contracts.
@@ -445,7 +481,9 @@ CRITICAL INSTRUCTIONS:
                     data = res.json()
                     return data["choices"][0]["message"]["content"].strip()
                 else:
-                    logger.warning(f"Chat completion error {res.status_code}: {res.text[:150]}")
+                    logger.warning(
+                        f"Chat completion error {res.status_code}: {res.text[:150]}"
+                    )
                     return None
         except Exception as e:
             logger.error(f"Chat completion call failed: {e}")

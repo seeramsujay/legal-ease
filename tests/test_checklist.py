@@ -4,10 +4,10 @@ Unit tests for the attorney checklist generator.
 
 from legal_ease.checklist_generator import AttorneyChecklistGenerator
 from legal_ease.models import (
-    RiskOverview,
-    RiskSeverity,
     ClauseAnalysis,
     ClauseCategory,
+    RiskOverview,
+    RiskSeverity,
 )
 
 

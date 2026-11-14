@@ -6,14 +6,14 @@ Optimized with pre-compiled regex objects for high-velocity linear scanning.
 """
 
 import re
-from typing import List, Tuple, Optional, Dict, Pattern
+
+from legal_ease.clause_segmenter import RawClause
 from legal_ease.models import (
     ClauseCategory,
-    RiskSeverity,
     RiskOverview,
+    RiskSeverity,
 )
-from legal_ease.clause_segmenter import RawClause
-from legal_ease.semantic_analyzer import get_semantic_model, SemanticClauseInsight
+from legal_ease.semantic_analyzer import SemanticClauseInsight, get_semantic_model
 
 # --- Pre-compiled Heuristic Regex Patterns for Maximum Single-Pass Velocity ---
 
@@ -109,25 +109,33 @@ _RE_SUBJECTIVE_WITHHOLDING = re.compile(
 
 # Latent boilerplate risk terminology
 LATENT_RISK_KEYWORDS = [
-    "liable", "liability", "indemn", "waive", "remedy", "breach", "damages", "forfeit"
+    "liable",
+    "liability",
+    "indemn",
+    "waive",
+    "remedy",
+    "breach",
+    "damages",
+    "forfeit",
 ]
 
 
 class ClauseRiskEvaluation:
     """Detailed risk assessment telemetry for a single clause."""
+
     def __init__(
         self,
         risk_score: int,
         severity: RiskSeverity,
-        reasons: List[str],
-        traps: List[str],
+        reasons: list[str],
+        traps: list[str],
         confidence: float = 0.95,
         confidence_label: str = "HIGH",
-        confidence_reasons: Optional[List[str]] = None,
+        confidence_reasons: list[str] | None = None,
         is_twisted: bool = False,
         obfuscation_score: float = 0.0,
-        archetype_scores: Optional[Dict[str, float]] = None,
-        detected_euphemisms: Optional[List[str]] = None,
+        archetype_scores: dict[str, float] | None = None,
+        detected_euphemisms: list[str] | None = None,
     ) -> None:
         self.risk_score = risk_score
         self.severity = severity
@@ -152,7 +160,7 @@ class RiskAnalyzer:
     def __init__(self) -> None:
         self.semantic_model = get_semantic_model()
 
-    def evaluate_clause(self, clause: Optional[RawClause]) -> ClauseRiskEvaluation:
+    def evaluate_clause(self, clause: RawClause | None) -> ClauseRiskEvaluation:
         """
         Evaluate a single raw clause and compute its risk score, traps, and confidence.
         Guarantees safe handling if clause is None or has empty content.
@@ -169,13 +177,15 @@ class RiskAnalyzer:
 
         text = clause.text.lower() if clause.text else ""
         score = 15  # Baseline standard score
-        reasons: List[str] = []
-        traps: List[str] = []
-        confidence_reasons: List[str] = []
+        reasons: list[str] = []
+        traps: list[str] = []
+        confidence_reasons: list[str] = []
         confidence = 0.95  # Default high confidence for straightforward clauses
 
         # --- Semantic Vector & Obfuscation Analysis ---
-        semantic: SemanticClauseInsight = self.semantic_model.evaluate_semantics(clause.text, clause.title)
+        semantic: SemanticClauseInsight = self.semantic_model.evaluate_semantics(
+            clause.text, clause.title
+        )
         if semantic.is_twisted:
             if semantic.detected_euphemisms:
                 traps.append("Twisted / Euphemistic Drafting Trap")
@@ -191,7 +201,11 @@ class RiskAnalyzer:
                 )
 
         # 1. Indemnification traps
-        if clause.category == ClauseCategory.INDEMNIFICATION or "indemnif" in text or "hold harmless" in text:
+        if (
+            clause.category == ClauseCategory.INDEMNIFICATION
+            or "indemnif" in text
+            or "hold harmless" in text
+        ):
             has_contractor_indemnifies = bool(_RE_CONTRACTOR_INDEMNIFIES.search(text))
             has_client_indemnifies = bool(_RE_CLIENT_INDEMNIFIES.search(text))
             has_attorney_fees = bool(_RE_ATTORNEY_FEES.search(text))
@@ -204,13 +218,19 @@ class RiskAnalyzer:
                 )
                 traps.append("Unilateral Indemnification Trap")
                 confidence = 0.96
-                confidence_reasons.append("Definitive match: explicit unilateral indemnification structure.")
+                confidence_reasons.append(
+                    "Definitive match: explicit unilateral indemnification structure."
+                )
             elif "indemnif" in text or "hold harmless" in text:
                 score += 25
-                reasons.append("Contains indemnification obligations requiring financial defense.")
+                reasons.append(
+                    "Contains indemnification obligations requiring financial defense."
+                )
                 if not has_contractor_indemnifies and not has_client_indemnifies:
                     confidence = min(confidence, 0.68)
-                    confidence_reasons.append("Ambiguous indemnifying party in clause text.")
+                    confidence_reasons.append(
+                        "Ambiguous indemnifying party in clause text."
+                    )
 
             if has_attorney_fees:
                 score += 15
@@ -250,7 +270,9 @@ class RiskAnalyzer:
                 confidence = 0.94
             else:
                 score += 20
-                reasons.append("Standard exclusion of indirect, special, or consequential damages.")
+                reasons.append(
+                    "Standard exclusion of indirect, special, or consequential damages."
+                )
 
         # 3. Dispute Resolution, Arbitration & Class Action Waiver
         if (
@@ -276,14 +298,18 @@ class RiskAnalyzer:
                 traps.append("Mandatory Arbitration Trap")
             if has_jury_waiver:
                 score += 15
-                reasons.append("Jury Trial Waiver: Relinquishes constitutional right to a jury trial.")
+                reasons.append(
+                    "Jury Trial Waiver: Relinquishes constitutional right to a jury trial."
+                )
 
         # 4. Termination traps
         if clause.category == ClauseCategory.TERMINATION or "terminat" in text:
             has_immediate_convenience = bool(_RE_IMMEDIATE_CONVENIENCE.search(text))
             has_no_cure = bool(_RE_NO_CURE.search(text))
 
-            if (has_immediate_convenience or "immediately" in text) and (has_no_cure or "without prior notice" in text or "without cause" in text):
+            if (has_immediate_convenience or "immediately" in text) and (
+                has_no_cure or "without prior notice" in text or "without cause" in text
+            ):
                 score += 55
                 reasons.append(
                     "Unilateral Immediate Termination: Counterparty can cancel on a moment's notice without providing a cure period."
@@ -297,7 +323,9 @@ class RiskAnalyzer:
                 )
             elif "terminat" in text:
                 score += 15
-                reasons.append("Defines conditions, notice requirements, and post-termination procedures.")
+                reasons.append(
+                    "Defines conditions, notice requirements, and post-termination procedures."
+                )
 
         # 5. Intellectual Property Overreach
         if (
@@ -318,10 +346,14 @@ class RiskAnalyzer:
                 confidence = 0.93
             if has_moral_rights_waiver:
                 score += 20
-                reasons.append("Moral Rights Waiver: Surrenders right of attribution and integrity of created works.")
+                reasons.append(
+                    "Moral Rights Waiver: Surrenders right of attribution and integrity of created works."
+                )
             if has_work_for_hire:
                 score += 20
-                reasons.append("Work-Made-For-Hire: All created deliverables transfer automatically upon creation.")
+                reasons.append(
+                    "Work-Made-For-Hire: All created deliverables transfer automatically upon creation."
+                )
 
         # 6. Restrictive Covenants / Non-Compete
         if (
@@ -336,12 +368,18 @@ class RiskAnalyzer:
             traps.append("Restrictive Covenant / Non-Compete Trap")
             if has_long_term:
                 score += 25
-                reasons.append("Excessive Duration: Restricts competitive employment for 2+ years.")
+                reasons.append(
+                    "Excessive Duration: Restricts competitive employment for 2+ years."
+                )
             if has_broad_geo:
                 score += 20
-                reasons.append("Excessive Geographic Scope: Purports to restrict competition globally or nationwide.")
+                reasons.append(
+                    "Excessive Geographic Scope: Purports to restrict competition globally or nationwide."
+                )
             if not reasons:
-                reasons.append("Imposes restrictions on client solicitation or competitive business activities.")
+                reasons.append(
+                    "Imposes restrictions on client solicitation or competitive business activities."
+                )
 
         # 7. Payment Terms traps
         if clause.category == ClauseCategory.PAYMENT_TERMS or "payment" in text:
@@ -350,22 +388,30 @@ class RiskAnalyzer:
 
             if has_net_90:
                 score += 35
-                reasons.append("Extended Payment Delay: Net 60/90 terms create substantial cash flow delays.")
+                reasons.append(
+                    "Extended Payment Delay: Net 60/90 terms create substantial cash flow delays."
+                )
                 traps.append("Net-60+ Payment Delay Trap")
             if has_subjective_approval:
                 score += 30
-                reasons.append("Subjective Payment Withholding: Client may withhold payment based on sole discretion.")
+                reasons.append(
+                    "Subjective Payment Withholding: Client may withhold payment based on sole discretion."
+                )
                 traps.append("Discretionary Payment / Clawback Trap")
             if not reasons:
                 score += 10
-                reasons.append("Standard invoicing, fee schedules, and milestone delivery terms.")
+                reasons.append(
+                    "Standard invoicing, fee schedules, and milestone delivery terms."
+                )
 
         # 8. Unclassified Boilerplate with Latent Risks
         if clause.category == ClauseCategory.GENERAL_BOILERPLATE:
             found_latent = [kw for kw in LATENT_RISK_KEYWORDS if kw in text]
             if found_latent:
                 score += 25
-                reasons.append(f"Uncategorized clause contains potential liability triggers: {', '.join(found_latent)}.")
+                reasons.append(
+                    f"Uncategorized clause contains potential liability triggers: {', '.join(found_latent)}."
+                )
                 confidence = min(confidence, 0.65)
                 confidence_reasons.append(
                     f"Unclassified clause with legal risk terminology ({', '.join(found_latent)}). Escalation recommended."
@@ -376,7 +422,11 @@ class RiskAnalyzer:
 
         # 9. Latent Trap Detection from Semantic Archetype Similarity
         if semantic.top_archetype_similarity >= 0.42 and not traps:
-            arch_name = semantic.top_archetype.replace("_", " ").title() if semantic.top_archetype else "Predatory Term"
+            arch_name = (
+                semantic.top_archetype.replace("_", " ").title()
+                if semantic.top_archetype
+                else "Predatory Term"
+            )
             traps.append(f"Disguised {arch_name} Trap")
             reasons.append(
                 semantic.explanation
@@ -384,13 +434,17 @@ class RiskAnalyzer:
             )
             score += 35
             confidence = min(confidence, 0.67)
-            confidence_reasons.append("Semantic vectors indicate disguised predatory obligations. LLM escalation recommended.")
+            confidence_reasons.append(
+                "Semantic vectors indicate disguised predatory obligations. LLM escalation recommended."
+            )
 
         # Ambiguity check: dense text (>120 words) with borderline score (35-55) and no traps
         word_count = len(text.split())
         if word_count > 120 and 35 <= score <= 55 and not traps:
             confidence = min(confidence, 0.70)
-            confidence_reasons.append("Dense legal verbiage with indeterminate liability thresholds.")
+            confidence_reasons.append(
+                "Dense legal verbiage with indeterminate liability thresholds."
+            )
 
         # Cap score between 5 and 98 to keep within realistic bounds
         final_score = max(5, min(98, score))
@@ -411,7 +465,9 @@ class RiskAnalyzer:
             confidence_label = "LOW"
 
         if not reasons:
-            reasons.append("Standard contract provision without elevated liability flags.")
+            reasons.append(
+                "Standard contract provision without elevated liability flags."
+            )
 
         return ClauseRiskEvaluation(
             risk_score=final_score,
@@ -428,7 +484,7 @@ class RiskAnalyzer:
         )
 
     def calculate_overview(
-        self, evaluations: Optional[List[ClauseRiskEvaluation]]
+        self, evaluations: list[ClauseRiskEvaluation] | None
     ) -> RiskOverview:
         """
         Calculates document-wide risk index, average confidence, and executive findings.
@@ -442,7 +498,9 @@ class RiskAnalyzer:
                 high_risk_count=0,
                 medium_risk_count=0,
                 low_risk_count=0,
-                critical_findings=["Document is empty or contains no detectable clauses."],
+                critical_findings=[
+                    "Document is empty or contains no detectable clauses."
+                ],
                 executive_summary="No content available to evaluate.",
                 average_confidence=1.0,
                 escalated_clauses_count=0,
@@ -450,13 +508,18 @@ class RiskAnalyzer:
             )
 
         total_clauses = len(evaluations)
-        high_count = sum(1 for e in evaluations if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL))
+        high_count = sum(
+            1
+            for e in evaluations
+            if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
+        )
         med_count = sum(1 for e in evaluations if e.severity == RiskSeverity.MEDIUM)
         low_count = sum(1 for e in evaluations if e.severity == RiskSeverity.LOW)
         twisted_count = sum(1 for e in evaluations if getattr(e, "is_twisted", False))
 
         weighted_sum = sum(
-            e.risk_score * (2.2 if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL) else 1.0)
+            e.risk_score
+            * (2.2 if e.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL) else 1.0)
             for e in evaluations
         )
         total_weight = sum(
@@ -468,18 +531,22 @@ class RiskAnalyzer:
 
         avg_conf = sum(e.confidence for e in evaluations) / max(1, total_clauses)
 
-        all_traps: List[str] = []
+        all_traps: list[str] = []
         for e in evaluations:
             for trap in e.traps:
                 if trap not in all_traps:
                     all_traps.append(trap)
 
-        critical_findings: List[str] = []
+        critical_findings: list[str] = []
         if all_traps:
             for trap in all_traps[:5]:
-                critical_findings.append(f"Detected {trap} requiring negotiation or legal counsel.")
+                critical_findings.append(
+                    f"Detected {trap} requiring negotiation or legal counsel."
+                )
         else:
-            critical_findings.append("No critical legal traps detected. Standard contractual language.")
+            critical_findings.append(
+                "No critical legal traps detected. Standard contractual language."
+            )
 
         if twisted_count > 0:
             critical_findings.append(

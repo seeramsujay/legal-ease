@@ -3,6 +3,7 @@ Integration tests for FastAPI endpoints and pipeline workflows.
 """
 
 from fastapi.testclient import TestClient
+
 from legal_ease.main import app
 from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
 

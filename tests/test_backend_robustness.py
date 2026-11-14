@@ -4,15 +4,13 @@ Tests core pipeline orchestrator, defensive input sanitization, complex legal pa
 resilience against malformed inputs, and fallback behavior.
 """
 
-import pytest
-from legal_ease.pipeline import LegalAnalysisPipeline
-from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
-from legal_ease.risk_analyzer import RiskAnalyzer
-from legal_ease.simplifier import PlainEnglishSimplifier
 from legal_ease.anonymizer import PIIAnonymizer
+from legal_ease.clause_segmenter import ClauseSegmenter, RawClause
 from legal_ease.comparator import ContractComparator
 from legal_ease.models import ClauseCategory, RiskSeverity
-from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED, SAAS_TERMS
+from legal_ease.pipeline import LegalAnalysisPipeline
+from legal_ease.risk_analyzer import RiskAnalyzer
+from legal_ease.sample_contracts import FREELANCE_HIGH_RISK, FREELANCE_NEGOTIATED
 
 
 class TestPipelineRobustness:
@@ -20,7 +18,9 @@ class TestPipelineRobustness:
 
     def test_sync_analyze_standard_contract(self):
         pipeline = LegalAnalysisPipeline()
-        res = pipeline.analyze(FREELANCE_HIGH_RISK, document_title="High Risk Agreement")
+        res = pipeline.analyze(
+            FREELANCE_HIGH_RISK, document_title="High Risk Agreement"
+        )
         assert res is not None
         assert res.risk_overview.total_clauses >= 5
         assert res.risk_overview.legal_risk_index > 50
@@ -150,7 +150,10 @@ class TestRiskAnalyzerPredatoryPatterns:
         )
         res = self.analyzer.evaluate_clause(clause)
         assert res.risk_score >= 65
-        assert any("pre-existing" in trap.lower() or "assignment" in trap.lower() for trap in res.traps)
+        assert any(
+            "pre-existing" in trap.lower() or "assignment" in trap.lower()
+            for trap in res.traps
+        )
 
     def test_clawback_and_withholding_trap(self):
         clause = RawClause(
@@ -161,7 +164,10 @@ class TestRiskAnalyzerPredatoryPatterns:
         )
         res = self.analyzer.evaluate_clause(clause)
         assert res.risk_score >= 50
-        assert any("clawback" in trap.lower() or "withhold" in trap.lower() for trap in res.traps)
+        assert any(
+            "clawback" in trap.lower() or "withhold" in trap.lower()
+            for trap in res.traps
+        )
 
 
 class TestPIIAnonymizerEdgeCases:
@@ -219,7 +225,9 @@ class TestComparatorEdgeCases:
     def test_compare_completely_disjoint_contracts(self):
         c1 = "1. Confidentiality. Recipient shall keep secret all business plans."
         c2 = "1. Warranty. The software is provided AS-IS without warranty of any kind."
-        res = self.comparator.compare(c1, c2, title_v1="Draft NDA", title_v2="Draft License")
+        res = self.comparator.compare(
+            c1, c2, title_v1="Draft NDA", title_v2="Draft License"
+        )
         assert res is not None
         assert len(res.clause_diffs) >= 1
 

@@ -3,11 +3,12 @@ Command Line Interface for Legal-Ease.
 Allows developers and users to analyze, compare, and redact contracts directly from the shell.
 """
 
-import sys
 import argparse
-from legal_ease.pipeline import LegalAnalysisPipeline
-from legal_ease.comparator import ContractComparator
+import sys
+
 from legal_ease.anonymizer import PIIAnonymizer
+from legal_ease.comparator import ContractComparator
+from legal_ease.pipeline import LegalAnalysisPipeline
 from legal_ease.sample_contracts import get_all_samples
 
 
@@ -26,21 +27,31 @@ def main():
     )
 
     # Compare subcommand
-    compare_parser = subparsers.add_parser("compare", help="Compare two contract versions")
+    compare_parser = subparsers.add_parser(
+        "compare", help="Compare two contract versions"
+    )
     compare_parser.add_argument("file1", help="Path to base/original contract file")
     compare_parser.add_argument("file2", help="Path to revised contract file")
 
     # Anonymize subcommand
-    anon_parser = subparsers.add_parser("anonymize", help="Test local PII redaction on a contract")
+    anon_parser = subparsers.add_parser(
+        "anonymize", help="Test local PII redaction on a contract"
+    )
     anon_parser.add_argument("file", help="Path to contract text file")
 
     # Samples subcommand
     subparsers.add_parser("samples", help="List bundled sample contracts")
 
     # Serve subcommand
-    serve_parser = subparsers.add_parser("serve", help="Launch the Web Application server")
-    serve_parser.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
-    serve_parser.add_argument("--host", default="0.0.0.0", help="Host address (default: 0.0.0.0)")
+    serve_parser = subparsers.add_parser(
+        "serve", help="Launch the Web Application server"
+    )
+    serve_parser.add_argument(
+        "--port", type=int, default=8000, help="Port to bind (default: 8000)"
+    )
+    serve_parser.add_argument(
+        "--host", default="0.0.0.0", help="Host address (default: 0.0.0.0)"
+    )
 
     args = parser.parse_args()
 
@@ -53,7 +64,9 @@ def main():
         print("\n📂 Bundled Realistic Contract Samples:")
         for s in samples:
             print(f"  • [{s.id}] {s.title} ({s.category})")
-        print("\nTip: Run 'legal-ease serve' to explore these samples in the interactive web UI.\n")
+        print(
+            "\nTip: Run 'legal-ease serve' to explore these samples in the interactive web UI.\n"
+        )
         return
 
     if args.command == "analyze":
@@ -70,10 +83,16 @@ def main():
         print("\n" + "=" * 60)
         print(f"⚖️ LEGAL-EASE CONTRACT ANALYSIS: {args.file}")
         print("=" * 60)
-        print(f"Legal Risk Index: {res.risk_overview.legal_risk_index}/100 [{res.risk_overview.risk_level.value}]")
+        print(
+            f"Legal Risk Index: {res.risk_overview.legal_risk_index}/100 [{res.risk_overview.risk_level.value}]"
+        )
         print(f"Clauses Analyzed: {res.risk_overview.total_clauses}")
-        print(f"High Risk: {res.risk_overview.high_risk_count} | Medium Risk: {res.risk_overview.medium_risk_count} | Low Risk: {res.risk_overview.low_risk_count}")
-        print(f"PII Redactions: {len(res.anonymization.entities)} sensitive entities masked locally")
+        print(
+            f"High Risk: {res.risk_overview.high_risk_count} | Medium Risk: {res.risk_overview.medium_risk_count} | Low Risk: {res.risk_overview.low_risk_count}"
+        )
+        print(
+            f"PII Redactions: {len(res.anonymization.entities)} sensitive entities masked locally"
+        )
         print("\nExecutive Summary:")
         print(res.risk_overview.executive_summary)
 
@@ -90,7 +109,10 @@ def main():
 
     if args.command == "compare":
         try:
-            with open(args.file1, "r", encoding="utf-8") as f1, open(args.file2, "r", encoding="utf-8") as f2:
+            with (
+                open(args.file1, "r", encoding="utf-8") as f1,
+                open(args.file2, "r", encoding="utf-8") as f2,
+            ):
                 c1 = f1.read()
                 c2 = f2.read()
         except Exception as e:
@@ -132,6 +154,7 @@ def main():
 
     if args.command == "serve":
         import uvicorn
+
         print(f"🚀 Starting Legal-Ease Web Dashboard on http://{args.host}:{args.port}")
         uvicorn.run("legal_ease.main:app", host=args.host, port=args.port, reload=False)
 
