@@ -67,7 +67,9 @@ PROVIDER_PRESETS: dict[str, dict[str, Any]] = {
 class LLMConfig(BaseModel):
     """Configuration state for remote LLM escalation."""
 
-    api_key: str | None = Field(default=None, description="API Key for the active provider")
+    api_key: str | None = Field(
+        default=None, description="API Key for the active provider"
+    )
     base_url: str = Field(
         default="https://generativelanguage.googleapis.com/v1beta/openai",
         description="API base URL",
@@ -76,13 +78,20 @@ class LLMConfig(BaseModel):
         default="gemini-2.0-flash-lite",
         description="Target model identifier",
     )
-    provider: str = Field(default="gemini", description="Active provider preset: gemini, nemotron, openai, or custom")
-    enabled: bool = Field(default=True, description="Whether remote escalation is active")
+    provider: str = Field(
+        default="gemini",
+        description="Active provider preset: gemini, nemotron, openai, or custom",
+    )
+    enabled: bool = Field(
+        default=True, description="Whether remote escalation is active"
+    )
     confidence_threshold: float = Field(
         default=0.75,
         description="Local confidence score threshold below which analysis is escalated to LLM",
     )
-    api_key_source: str = Field(default="none", description="environment, user_configured, or none")
+    api_key_source: str = Field(
+        default="none", description="environment, user_configured, or none"
+    )
 
 
 class NemotronClient:
@@ -98,10 +107,14 @@ class NemotronClient:
             if "nemotron" in self.config.model_name.lower():
                 self.config.provider = "nemotron"
             elif "gpt" in self.config.model_name.lower() or (
-                "openai.com" in self.config.base_url.lower() and "google" not in self.config.base_url.lower()
+                "openai.com" in self.config.base_url.lower()
+                and "google" not in self.config.base_url.lower()
             ):
                 self.config.provider = "openai"
-            elif "gemini" in self.config.model_name.lower() or "googleapis.com" in self.config.base_url.lower():
+            elif (
+                "gemini" in self.config.model_name.lower()
+                or "googleapis.com" in self.config.base_url.lower()
+            ):
                 self.config.provider = "gemini"
         else:
             self.config = self._discover_initial_config()
@@ -127,14 +140,20 @@ class NemotronClient:
 
         for prov in provider_order:
             preset = PROVIDER_PRESETS[prov]
-            vars_to_check = preset["env_vars"] + (["LLM_API_KEY"] if prov == "openai" else [])
+            vars_to_check = preset["env_vars"] + (
+                ["LLM_API_KEY"] if prov == "openai" else []
+            )
             for var in vars_to_check:
                 val = os.getenv(var)
                 if val and val.strip():
                     return LLMConfig(
                         api_key=val.strip(),
-                        base_url=os.getenv(f"{prov.upper()}_BASE_URL", preset["base_url"]),
-                        model_name=os.getenv(f"{prov.upper()}_MODEL_NAME", preset["model_name"]),
+                        base_url=os.getenv(
+                            f"{prov.upper()}_BASE_URL", preset["base_url"]
+                        ),
+                        model_name=os.getenv(
+                            f"{prov.upper()}_MODEL_NAME", preset["model_name"]
+                        ),
                         provider=prov,
                         enabled=True,
                         confidence_threshold=threshold,
@@ -146,7 +165,9 @@ class NemotronClient:
         return LLMConfig(
             api_key=None,
             base_url=os.getenv(f"{target_prov.upper()}_BASE_URL", preset["base_url"]),
-            model_name=os.getenv(f"{target_prov.upper()}_MODEL_NAME", preset["model_name"]),
+            model_name=os.getenv(
+                f"{target_prov.upper()}_MODEL_NAME", preset["model_name"]
+            ),
             provider=target_prov,
             enabled=False,
             confidence_threshold=threshold,
@@ -189,7 +210,8 @@ class NemotronClient:
             "masked_key": masked_key,
             "env_available_provider": env_available_provider,
             "available_presets": {
-                k: {"name": v["display_name"], "model": v["model_name"]} for k, v in PROVIDER_PRESETS.items()
+                k: {"name": v["display_name"], "model": v["model_name"]}
+                for k, v in PROVIDER_PRESETS.items()
             },
         }
 
@@ -231,7 +253,9 @@ class NemotronClient:
             else:
                 # User cleared BYOK; try to find an environment key for this provider
                 env_key = None
-                for env_var in PROVIDER_PRESETS.get(self.config.provider, {}).get("env_vars", []):
+                for env_var in PROVIDER_PRESETS.get(self.config.provider, {}).get(
+                    "env_vars", []
+                ):
                     val = os.getenv(env_var)
                     if val and val.strip():
                         env_key = val.strip()
@@ -278,7 +302,14 @@ class NemotronClient:
         payload = {
             "model": self.config.model_name,
             "messages": [
-                {"role": "system", "content": "Respond with 'OK'." if not self.config.provider == "gemini" else "OK"},
+                {
+                    "role": "system",
+                    "content": (
+                        "Respond with 'OK'."
+                        if not self.config.provider == "gemini"
+                        else "OK"
+                    ),
+                },
                 {"role": "user", "content": "Ping"},
             ],
             "max_tokens": 10,
@@ -400,7 +431,11 @@ Respond ONLY with valid JSON.
             return None
 
         safe_query = str(query) if query else ""
-        safe_context = str(anonymized_contract_context)[:6000] if anonymized_contract_context else ""
+        safe_context = (
+            str(anonymized_contract_context)[:6000]
+            if anonymized_contract_context
+            else ""
+        )
 
         provider_title = self.config.provider.title()
         system_prompt = f"""You are Legal-Ease, an expert AI legal navigator powered by {provider_title} designed to help freelancers, contractors, and small business owners understand contracts.
@@ -446,7 +481,9 @@ CRITICAL INSTRUCTIONS:
                     data = res.json()
                     return data["choices"][0]["message"]["content"].strip()
                 else:
-                    logger.warning(f"Chat completion error {res.status_code}: {res.text[:150]}")
+                    logger.warning(
+                        f"Chat completion error {res.status_code}: {res.text[:150]}"
+                    )
                     return None
         except Exception as e:
             logger.error(f"Chat completion call failed: {e}")

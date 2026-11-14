@@ -20,7 +20,9 @@ class PIIAnonymizer:
     EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 
     # Phone number patterns: US, International (+XX), formatted with hyphens, periods, or spaces
-    PHONE_PATTERN = re.compile(r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b")
+    PHONE_PATTERN = re.compile(
+        r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"
+    )
 
     # SSN / Tax ID / EIN: Standard federal 9-digit formats (XXX-XX-XXXX or XX-XXXXXXX)
     SSN_EIN_PATTERN = re.compile(r"\b(?:\d{3}-\d{2}-\d{4}|\d{2}-\d{7})\b")
@@ -88,7 +90,9 @@ class PIIAnonymizer:
 
         # Value-to-token map ensures that identical identifiers receive consistent pseudonym tokens
         value_to_token: dict[str, str] = {}
-        spans_to_replace: list[tuple[int, int, str, str, str]] = []  # (start, end, original, token, type)
+        spans_to_replace: list[tuple[int, int, str, str, str]] = (
+            []
+        )  # (start, end, original, token, type)
 
         # 1. Detect Emails
         for m in self.EMAIL_PATTERN.finditer(safe_text):
@@ -96,7 +100,9 @@ class PIIAnonymizer:
             if val not in value_to_token:
                 entity_counts["EMAIL"] += 1
                 value_to_token[val] = f"[EMAIL_{entity_counts['EMAIL']}]"
-            spans_to_replace.append((m.start(), m.end(), val, value_to_token[val], "EMAIL"))
+            spans_to_replace.append(
+                (m.start(), m.end(), val, value_to_token[val], "EMAIL")
+            )
 
         # 2. Detect SSN / EIN
         for m in self.SSN_EIN_PATTERN.finditer(safe_text):
@@ -104,7 +110,9 @@ class PIIAnonymizer:
             if val not in value_to_token:
                 entity_counts["SSN_TAX_ID"] += 1
                 value_to_token[val] = f"[TAX_ID_{entity_counts['SSN_TAX_ID']}]"
-            spans_to_replace.append((m.start(), m.end(), val, value_to_token[val], "SSN_TAX_ID"))
+            spans_to_replace.append(
+                (m.start(), m.end(), val, value_to_token[val], "SSN_TAX_ID")
+            )
 
         # 3. Detect Credit Cards
         for m in self.CREDIT_CARD_PATTERN.finditer(safe_text):
@@ -114,7 +122,9 @@ class PIIAnonymizer:
                 if val not in value_to_token:
                     entity_counts["CREDIT_CARD"] += 1
                     value_to_token[val] = f"[CARD_{entity_counts['CREDIT_CARD']}]"
-                spans_to_replace.append((m.start(), m.end(), val, value_to_token[val], "CREDIT_CARD"))
+                spans_to_replace.append(
+                    (m.start(), m.end(), val, value_to_token[val], "CREDIT_CARD")
+                )
 
         # 4. Detect Phone Numbers
         for m in self.PHONE_PATTERN.finditer(safe_text):
@@ -124,7 +134,9 @@ class PIIAnonymizer:
                 if val not in value_to_token:
                     entity_counts["PHONE"] += 1
                     value_to_token[val] = f"[PHONE_{entity_counts['PHONE']}]"
-                spans_to_replace.append((m.start(), m.end(), val, value_to_token[val], "PHONE"))
+                spans_to_replace.append(
+                    (m.start(), m.end(), val, value_to_token[val], "PHONE")
+                )
 
         # 5. Detect Addresses
         for m in self.ADDRESS_PATTERN.finditer(safe_text):
@@ -132,25 +144,35 @@ class PIIAnonymizer:
             if val not in value_to_token:
                 entity_counts["ADDRESS"] += 1
                 value_to_token[val] = f"[ADDRESS_{entity_counts['ADDRESS']}]"
-            spans_to_replace.append((m.start(), m.end(), val, value_to_token[val], "ADDRESS"))
+            spans_to_replace.append(
+                (m.start(), m.end(), val, value_to_token[val], "ADDRESS")
+            )
 
         # 6. Detect Financial Amounts
         for m in self.MONEY_PATTERN.finditer(safe_text):
             val = m.group()
             if val not in value_to_token:
                 entity_counts["FINANCIAL"] += 1
-                value_to_token[val] = f"[CONFIDENTIAL_AMOUNT_{entity_counts['FINANCIAL']}]"
-            spans_to_replace.append((m.start(), m.end(), val, value_to_token[val], "FINANCIAL"))
+                value_to_token[val] = (
+                    f"[CONFIDENTIAL_AMOUNT_{entity_counts['FINANCIAL']}]"
+                )
+            spans_to_replace.append(
+                (m.start(), m.end(), val, value_to_token[val], "FINANCIAL")
+            )
 
         # 7. Detect Contract Named Parties & Signatories
         for m in self.PARTY_PATTERN.finditer(safe_text):
             party_name = m.group(1).strip()
             if len(party_name) > 2 and party_name not in value_to_token:
                 entity_counts["PARTY_NAME"] += 1
-                value_to_token[party_name] = f"[PARTY_ENTITY_{entity_counts['PARTY_NAME']}]"
+                value_to_token[party_name] = (
+                    f"[PARTY_ENTITY_{entity_counts['PARTY_NAME']}]"
+                )
                 start = m.start(1)
                 end = m.end(1)
-                spans_to_replace.append((start, end, party_name, value_to_token[party_name], "PARTY_NAME"))
+                spans_to_replace.append(
+                    (start, end, party_name, value_to_token[party_name], "PARTY_NAME")
+                )
 
         for m in self.SIG_NAME_PATTERN.finditer(safe_text):
             name = m.group(1).strip()
@@ -159,7 +181,9 @@ class PIIAnonymizer:
                 value_to_token[name] = f"[PERSON_NAME_{entity_counts['PARTY_NAME']}]"
                 start = m.start(1)
                 end = m.end(1)
-                spans_to_replace.append((start, end, name, value_to_token[name], "PARTY_NAME"))
+                spans_to_replace.append(
+                    (start, end, name, value_to_token[name], "PARTY_NAME")
+                )
 
         # Sort spans by ascending start index
         spans_to_replace.sort(key=lambda x: x[0])
@@ -202,7 +226,9 @@ class PIIAnonymizer:
             privacy_score=privacy_score,
         )
 
-    def deanonymize(self, text: str | None, entities: list[RedactedEntity] | None) -> str:
+    def deanonymize(
+        self, text: str | None, entities: list[RedactedEntity] | None
+    ) -> str:
         """
         Re-hydrates pseudonym tokens back to original values for local, authorized views.
         Defensively handles None arguments.

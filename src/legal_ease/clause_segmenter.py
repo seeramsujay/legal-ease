@@ -214,7 +214,11 @@ class ClauseSegmenter:
 
             for i in range(len(unique_splits)):
                 curr_idx, title = unique_splits[i]
-                next_idx = unique_splits[i + 1][0] if i + 1 < len(unique_splits) else len(safe_text)
+                next_idx = (
+                    unique_splits[i + 1][0]
+                    if i + 1 < len(unique_splits)
+                    else len(safe_text)
+                )
                 clause_text = safe_text[curr_idx:next_idx].strip()
                 cat = self._classify_category(title, clause_text)
                 clauses.append(
@@ -228,7 +232,9 @@ class ClauseSegmenter:
             return clauses
 
         # Fallback: Split by clean paragraph breaks
-        paragraphs = [p.strip() for p in _PARAGRAPH_SPLIT_PATTERN.split(safe_text) if p.strip()]
+        paragraphs = [
+            p.strip() for p in _PARAGRAPH_SPLIT_PATTERN.split(safe_text) if p.strip()
+        ]
         clauses = []
         for i, para in enumerate(paragraphs, 1):
             first_line = para.split("\n")[0][:60].strip()

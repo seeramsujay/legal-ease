@@ -128,7 +128,9 @@ class ContractComparator:
                 )
             else:
                 # Clause in v1 was removed in v2
-                summary_of_changes.append(f"Removed '{c1.title}' (Previously scored {e1.risk_score}/100 Risk).")
+                summary_of_changes.append(
+                    f"Removed '{c1.title}' (Previously scored {e1.risk_score}/100 Risk)."
+                )
                 clause_diffs.append(
                     ClauseDiff(
                         section_title=c1.title,
@@ -147,7 +149,9 @@ class ContractComparator:
         for j, c2 in enumerate(clauses_v2):
             if j not in matched_v2_indices:
                 e2 = evals_v2[j]
-                summary_of_changes.append(f"Added new provision '{c2.title}' (Assessed at {e2.risk_score}/100 Risk).")
+                summary_of_changes.append(
+                    f"Added new provision '{c2.title}' (Assessed at {e2.risk_score}/100 Risk)."
+                )
                 clause_diffs.append(
                     ClauseDiff(
                         section_title=c2.title,
@@ -163,7 +167,9 @@ class ContractComparator:
                 )
 
         if not summary_of_changes:
-            summary_of_changes.append("Both contract drafts are substantively identical in scope and obligations.")
+            summary_of_changes.append(
+                "Both contract drafts are substantively identical in scope and obligations."
+            )
 
         return ContractComparisonResponse(
             document_title_v1=t1,

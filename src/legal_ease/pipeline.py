@@ -38,7 +38,9 @@ class LegalAnalysisPipeline:
         self.checklist_gen = AttorneyChecklistGenerator()
         self.llm_client = llm_client or NemotronClient()
 
-    async def analyze_async(self, raw_text: str | None, document_title: str | None = None) -> ContractAnalysisResponse:
+    async def analyze_async(
+        self, raw_text: str | None, document_title: str | None = None
+    ) -> ContractAnalysisResponse:
         """
         Asynchronously executes the full legal analysis with LLM escalation on low confidence or twisted drafting.
         Guarantees defensive execution against empty, None, or malformed inputs.
@@ -68,7 +70,9 @@ class LegalAnalysisPipeline:
             clause_evaluations.append(eval_res)
 
             # Check if local confidence is below threshold AND LLM is configured
-            is_low_confidence = eval_res.confidence < self.llm_client.config.confidence_threshold
+            is_low_confidence = (
+                eval_res.confidence < self.llm_client.config.confidence_threshold
+            )
             can_escalate = self.llm_client.is_configured() and is_low_confidence
 
             deep_data: dict[str, Any] | None = None
@@ -94,15 +98,21 @@ class LegalAnalysisPipeline:
                 traps = deep_data.get("detected_traps", eval_res.traps)
                 summary = (
                     deep_data.get("plain_english_summary")
-                    or self.simplifier.simplify(c.category, severity, c.title, c.text, traps)[0]
+                    or self.simplifier.simplify(
+                        c.category, severity, c.title, c.text, traps
+                    )[0]
                 )
                 impact = (
                     deep_data.get("what_it_means_for_you")
-                    or self.simplifier.simplify(c.category, severity, c.title, c.text, traps)[1]
+                    or self.simplifier.simplify(
+                        c.category, severity, c.title, c.text, traps
+                    )[1]
                 )
                 tip = (
                     deep_data.get("negotiation_tip")
-                    or self.simplifier.simplify(c.category, severity, c.title, c.text, traps)[2]
+                    or self.simplifier.simplify(
+                        c.category, severity, c.title, c.text, traps
+                    )[2]
                 )
 
                 if "gemini" in self.llm_client.config.model_name.lower():
@@ -122,7 +132,9 @@ class LegalAnalysisPipeline:
                 )
                 confidence = 0.95
                 confidence_label = "HIGH"
-                risk_reasons = eval_res.reasons + [f"AI Synthesis: {deep_data.get('reasoning', '')}"]
+                risk_reasons = eval_res.reasons + [
+                    f"AI Synthesis: {deep_data.get('reasoning', '')}"
+                ]
             else:
                 summary, impact, tip = self.simplifier.simplify(
                     c.category, eval_res.severity, c.title, c.text, eval_res.traps
@@ -166,10 +178,14 @@ class LegalAnalysisPipeline:
         overview.escalated_clauses_count = escalated_count
 
         if self.llm_client.is_configured():
-            overview.ai_model_used = f"Local Privacy Shield + {self.llm_client.config.model_name}"
+            overview.ai_model_used = (
+                f"Local Privacy Shield + {self.llm_client.config.model_name}"
+            )
 
         # Step 5: Generate Attorney Brief & Checklist
-        attorney_brief = self.checklist_gen.generate(doc_title, overview, analyzed_clauses)
+        attorney_brief = self.checklist_gen.generate(
+            doc_title, overview, analyzed_clauses
+        )
 
         return ContractAnalysisResponse(
             document_id=doc_id,
@@ -181,7 +197,9 @@ class LegalAnalysisPipeline:
             analyzed_at=datetime.now(UTC).isoformat(),
         )
 
-    def analyze(self, raw_text: str | None, document_title: str | None = None) -> ContractAnalysisResponse:
+    def analyze(
+        self, raw_text: str | None, document_title: str | None = None
+    ) -> ContractAnalysisResponse:
         """
         Synchronously executes the full legal analysis.
         Convenience wrapper around analyze_async for CLI, scripts, and synchronous workflows.
@@ -197,6 +215,8 @@ class LegalAnalysisPipeline:
 
         if loop and loop.is_running():
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, self.analyze_async(raw_text, document_title)).result()
+                return pool.submit(
+                    asyncio.run, self.analyze_async(raw_text, document_title)
+                ).result()
         else:
             return asyncio.run(self.analyze_async(raw_text, document_title))

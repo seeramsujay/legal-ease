@@ -34,9 +34,7 @@ class TestAnalyzeEndpointEdgeCases:
         assert res.status_code == 422
 
     def test_analyze_auto_title_inference(self):
-        contract_text = (
-            "MUTUAL CONFIDENTIALITY AND NONDISCLOSURE AGREEMENT\n1. Scope. Parties agree to exchange trade secrets."
-        )
+        contract_text = "MUTUAL CONFIDENTIALITY AND NONDISCLOSURE AGREEMENT\n1. Scope. Parties agree to exchange trade secrets."
         res = client.post("/api/analyze", json={"text": contract_text})
         assert res.status_code == 200
         data = res.json()
@@ -51,7 +49,9 @@ class TestAnalyzeFileEndpointEdgeCases:
     def test_upload_valid_txt_file(self):
         content = b"1. Term. This agreement shall remain in effect for two years."
         files = {"file": ("contract.txt", io.BytesIO(content), "text/plain")}
-        res = client.post("/api/analyze-file", files=files, data={"title": "Custom TXT Title"})
+        res = client.post(
+            "/api/analyze-file", files=files, data={"title": "Custom TXT Title"}
+        )
         assert res.status_code == 200
         data = res.json()
         assert data["risk_overview"]["total_clauses"] >= 1
@@ -92,7 +92,9 @@ class TestCompareEndpointEdgeCases:
         assert res.status_code == 400
         data = res.json()
         assert data["error"] is True
-        assert "Both original (v1) and revised (v2) texts are required" in data["detail"]
+        assert (
+            "Both original (v1) and revised (v2) texts are required" in data["detail"]
+        )
 
     def test_compare_missing_v2_returns_400(self):
         res = client.post(
@@ -183,7 +185,9 @@ class TestChatEndpointEdgeCases:
         )
         assert res.status_code == 200
         data = res.json()
-        assert "Restrictive Covenants" in data["answer"] or "Non-Compete" in data["answer"]
+        assert (
+            "Restrictive Covenants" in data["answer"] or "Non-Compete" in data["answer"]
+        )
 
     def test_chat_payment_terms_and_delays(self):
         contract_with_pay = "1. Payment. Client shall pay invoices Net 90 days."

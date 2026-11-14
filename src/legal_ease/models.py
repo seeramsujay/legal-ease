@@ -41,21 +41,32 @@ class RedactedEntity(BaseModel):
     entity_type: str = Field(
         description="PII Category: EMAIL, PHONE, SSN_TAX_ID, FINANCIAL, CREDIT_CARD, ADDRESS, PARTY_NAME"
     )
-    original_value: str = Field(description="Original unredacted sensitive entity value")
-    token: str = Field(description="Pseudonym token replacement, e.g. [EMAIL_1], [CONFIDENTIAL_AMOUNT_1]")
-    start_char: int = Field(ge=0, description="Character start index in original raw text")
+    original_value: str = Field(
+        description="Original unredacted sensitive entity value"
+    )
+    token: str = Field(
+        description="Pseudonym token replacement, e.g. [EMAIL_1], [CONFIDENTIAL_AMOUNT_1]"
+    )
+    start_char: int = Field(
+        ge=0, description="Character start index in original raw text"
+    )
     end_char: int = Field(ge=0, description="Character end index in original raw text")
 
 
 class AnonymizationResult(BaseModel):
     """Output summary of the deterministic local PII redaction pass."""
 
-    redacted_text: str = Field(description="Sanitized text with all sensitive identifiers replaced with tokens")
+    redacted_text: str = Field(
+        description="Sanitized text with all sensitive identifiers replaced with tokens"
+    )
     entities: list[RedactedEntity] = Field(
         default_factory=list, description="List of all detected and redacted entities"
     )
     privacy_score: float = Field(
-        default=100.0, ge=0.0, le=100.0, description="Estimated privacy coverage score (0.0 to 100.0)"
+        default=100.0,
+        ge=0.0,
+        le=100.0,
+        description="Estimated privacy coverage score (0.0 to 100.0)",
     )
     entity_counts: dict[str, int] = Field(
         default_factory=dict, description="Redaction counts partitioned by entity type"
@@ -66,71 +77,127 @@ class ClauseAnalysis(BaseModel):
     """Comprehensive linguistic, risk, and translation analysis for an individual contract clause."""
 
     id: int = Field(ge=1, description="Sequential clause identifier")
-    section_title: str = Field(default="Untitled Section", description="Extracted heading or section numbering")
-    category: ClauseCategory = Field(
-        default=ClauseCategory.GENERAL_BOILERPLATE, description="Classified legal category"
+    section_title: str = Field(
+        default="Untitled Section", description="Extracted heading or section numbering"
     )
-    original_text: str = Field(description="Raw text of the clause as present in document")
+    category: ClauseCategory = Field(
+        default=ClauseCategory.GENERAL_BOILERPLATE,
+        description="Classified legal category",
+    )
+    original_text: str = Field(
+        description="Raw text of the clause as present in document"
+    )
     redacted_text: str = Field(description="Privacy-sanitized text of the clause")
-    risk_score: int = Field(ge=0, le=100, description="Liability exposure score from 0 (benign) to 100 (catastrophic)")
-    severity: RiskSeverity = Field(default=RiskSeverity.LOW, description="Categorized severity level")
-    confidence: float = Field(default=0.95, ge=0.0, le=1.0, description="Confidence in the local heuristic assessment")
-    confidence_label: str = Field(default="HIGH", description="Categorical confidence tag: HIGH, MEDIUM, LOW")
+    risk_score: int = Field(
+        ge=0,
+        le=100,
+        description="Liability exposure score from 0 (benign) to 100 (catastrophic)",
+    )
+    severity: RiskSeverity = Field(
+        default=RiskSeverity.LOW, description="Categorized severity level"
+    )
+    confidence: float = Field(
+        default=0.95,
+        ge=0.0,
+        le=1.0,
+        description="Confidence in the local heuristic assessment",
+    )
+    confidence_label: str = Field(
+        default="HIGH", description="Categorical confidence tag: HIGH, MEDIUM, LOW"
+    )
     analysis_source: str = Field(
-        default="LOCAL_HEURISTICS", description="Engine source: LOCAL_HEURISTICS or GEMINI_DEEP_REASONING"
+        default="LOCAL_HEURISTICS",
+        description="Engine source: LOCAL_HEURISTICS or GEMINI_DEEP_REASONING",
     )
     escalation_reason: str | None = Field(
         default=None, description="Diagnostic justification if escalated to remote LLM"
     )
     risk_reasons: list[str] = Field(
-        default_factory=list, description="Specific risk exposures and legal hazards identified"
+        default_factory=list,
+        description="Specific risk exposures and legal hazards identified",
     )
     plain_english_summary: str = Field(
-        default="", description="Conversational summary demystifying the clause for non-lawyers"
+        default="",
+        description="Conversational summary demystifying the clause for non-lawyers",
     )
     what_it_means_for_you: str = Field(
-        default="", description="Practical real-world business and personal liability consequences"
+        default="",
+        description="Practical real-world business and personal liability consequences",
     )
-    negotiation_tip: str = Field(default="", description="Concrete redline counter-proposal to balance the terms")
+    negotiation_tip: str = Field(
+        default="", description="Concrete redline counter-proposal to balance the terms"
+    )
     detected_traps: list[str] = Field(
-        default_factory=list, description="Recognized predatory drafting archetypes and traps"
+        default_factory=list,
+        description="Recognized predatory drafting archetypes and traps",
     )
-    is_twisted: bool = Field(default=False, description="Flag indicating semantic obfuscation or deceptive euphemisms")
+    is_twisted: bool = Field(
+        default=False,
+        description="Flag indicating semantic obfuscation or deceptive euphemisms",
+    )
     obfuscation_score: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Complexity and obfuscation index (0.0 clear to 1.0 disguised)"
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Complexity and obfuscation index (0.0 clear to 1.0 disguised)",
     )
     semantic_archetype_matches: dict[str, float] = Field(
-        default_factory=dict, description="Cosine similarity metrics against predatory archetypes"
+        default_factory=dict,
+        description="Cosine similarity metrics against predatory archetypes",
     )
     detected_euphemisms: list[str] = Field(
-        default_factory=list, description="Specific deceptive drafting euphemisms flagged"
+        default_factory=list,
+        description="Specific deceptive drafting euphemisms flagged",
     )
 
 
 class RiskOverview(BaseModel):
     """Executive document-level risk synthesis and exposure scorecard."""
 
-    legal_risk_index: int = Field(ge=0, le=100, description="Overall contract hazard score from 0 to 100")
-    risk_level: RiskSeverity = Field(default=RiskSeverity.LOW, description="Aggregated risk tier")
-    total_clauses: int = Field(default=0, ge=0, description="Total number of segmented clauses")
-    high_risk_count: int = Field(default=0, ge=0, description="Count of HIGH and CRITICAL risk clauses")
-    medium_risk_count: int = Field(default=0, ge=0, description="Count of MEDIUM risk clauses")
-    low_risk_count: int = Field(default=0, ge=0, description="Count of LOW risk clauses")
-    critical_findings: list[str] = Field(default_factory=list, description="Prioritized list of top exposures")
+    legal_risk_index: int = Field(
+        ge=0, le=100, description="Overall contract hazard score from 0 to 100"
+    )
+    risk_level: RiskSeverity = Field(
+        default=RiskSeverity.LOW, description="Aggregated risk tier"
+    )
+    total_clauses: int = Field(
+        default=0, ge=0, description="Total number of segmented clauses"
+    )
+    high_risk_count: int = Field(
+        default=0, ge=0, description="Count of HIGH and CRITICAL risk clauses"
+    )
+    medium_risk_count: int = Field(
+        default=0, ge=0, description="Count of MEDIUM risk clauses"
+    )
+    low_risk_count: int = Field(
+        default=0, ge=0, description="Count of LOW risk clauses"
+    )
+    critical_findings: list[str] = Field(
+        default_factory=list, description="Prioritized list of top exposures"
+    )
     executive_summary: str = Field(
-        default="No content analyzed.", description="Actionable executive assessment for decision makers"
+        default="No content analyzed.",
+        description="Actionable executive assessment for decision makers",
     )
     average_confidence: float = Field(
-        default=0.92, ge=0.0, le=1.0, description="Mean confidence across all evaluated clauses"
+        default=0.92,
+        ge=0.0,
+        le=1.0,
+        description="Mean confidence across all evaluated clauses",
     )
     escalated_clauses_count: int = Field(
-        default=0, ge=0, description="Number of clauses escalated to LLM for deep reasoning"
+        default=0,
+        ge=0,
+        description="Number of clauses escalated to LLM for deep reasoning",
     )
     twisted_clauses_count: int = Field(
-        default=0, ge=0, description="Number of clauses flagged with obfuscated or twisted language"
+        default=0,
+        ge=0,
+        description="Number of clauses flagged with obfuscated or twisted language",
     )
     ai_model_used: str | None = Field(
-        default="Local Rules + Deterministic Heuristics", description="Active AI engine descriptor"
+        default="Local Rules + Deterministic Heuristics",
+        description="Active AI engine descriptor",
     )
 
 
@@ -138,24 +205,39 @@ class AttorneyQuestion(BaseModel):
     """Structured question for a professional attorney consultation."""
 
     category: str = Field(description="Legal domain or subject area")
-    question: str = Field(description="Precise, high-value question to pose to legal counsel")
-    why_it_matters: str = Field(description="Explanation of underlying risk and financial exposure")
-    recommended_fallback: str = Field(description="Standard fair market fallback position or amendment")
-    related_clause_id: int | None = Field(default=None, description="Optional foreign key to originating clause")
+    question: str = Field(
+        description="Precise, high-value question to pose to legal counsel"
+    )
+    why_it_matters: str = Field(
+        description="Explanation of underlying risk and financial exposure"
+    )
+    recommended_fallback: str = Field(
+        description="Standard fair market fallback position or amendment"
+    )
+    related_clause_id: int | None = Field(
+        default=None, description="Optional foreign key to originating clause"
+    )
 
 
 class AttorneyChecklist(BaseModel):
     """Comprehensive attorney consultation brief and redline checklist."""
 
-    document_title: str = Field(default="Contract Agreement", description="Document title or reference")
-    overall_risk_index: int = Field(ge=0, le=100, description="Overall document risk score")
+    document_title: str = Field(
+        default="Contract Agreement", description="Document title or reference"
+    )
+    overall_risk_index: int = Field(
+        ge=0, le=100, description="Overall document risk score"
+    )
     questions_for_counsel: list[AttorneyQuestion] = Field(
         default_factory=list, description="Prioritized questions for legal consultation"
     )
     priority_negotiation_items: list[str] = Field(
-        default_factory=list, description="Checklist of essential counter-proposal amendments"
+        default_factory=list,
+        description="Checklist of essential counter-proposal amendments",
     )
-    markdown_report: str = Field(default="", description="Exportable Markdown formatted brief for counsel")
+    markdown_report: str = Field(
+        default="", description="Exportable Markdown formatted brief for counsel"
+    )
 
 
 class DiffChangeType(str, Enum):
@@ -172,43 +254,81 @@ class ClauseDiff(BaseModel):
 
     section_title: str = Field(description="Clause heading or identifier")
     category: str = Field(description="Legal subject matter category")
-    change_type: DiffChangeType = Field(description="ADDED, REMOVED, MODIFIED, or UNCHANGED")
-    text_v1: str | None = Field(default=None, description="Clause text in original draft (v1)")
-    text_v2: str | None = Field(default=None, description="Clause text in revised draft (v2)")
-    risk_score_v1: int | None = Field(default=None, description="Risk score of original clause")
-    risk_score_v2: int | None = Field(default=None, description="Risk score of revised clause")
-    risk_delta: int = Field(default=0, description="Risk point trajectory (v2 - v1; negative is safer)")
-    analysis_notes: str = Field(default="", description="Explanatory notes on the legal impact of the revision")
+    change_type: DiffChangeType = Field(
+        description="ADDED, REMOVED, MODIFIED, or UNCHANGED"
+    )
+    text_v1: str | None = Field(
+        default=None, description="Clause text in original draft (v1)"
+    )
+    text_v2: str | None = Field(
+        default=None, description="Clause text in revised draft (v2)"
+    )
+    risk_score_v1: int | None = Field(
+        default=None, description="Risk score of original clause"
+    )
+    risk_score_v2: int | None = Field(
+        default=None, description="Risk score of revised clause"
+    )
+    risk_delta: int = Field(
+        default=0, description="Risk point trajectory (v2 - v1; negative is safer)"
+    )
+    analysis_notes: str = Field(
+        default="", description="Explanatory notes on the legal impact of the revision"
+    )
 
 
 class ContractComparisonResponse(BaseModel):
     """Full side-by-side contract comparison response with trajectory analysis."""
 
-    document_title_v1: str = Field(default="Original Draft", description="Title of base agreement")
-    document_title_v2: str = Field(default="Revised Draft", description="Title of counter-proposal")
+    document_title_v1: str = Field(
+        default="Original Draft", description="Title of base agreement"
+    )
+    document_title_v2: str = Field(
+        default="Revised Draft", description="Title of counter-proposal"
+    )
     disclaimer: str = Field(description="Mandatory non-advisory legal disclosure")
-    risk_index_v1: int = Field(ge=0, le=100, description="Risk index of original version")
-    risk_index_v2: int = Field(ge=0, le=100, description="Risk index of revised version")
-    risk_index_delta: int = Field(description="Overall risk index change (negative indicates reduced exposure)")
-    trajectory: str = Field(description="Directional assessment: 'SAFER', 'MORE_RISK', or 'NEUTRAL'")
+    risk_index_v1: int = Field(
+        ge=0, le=100, description="Risk index of original version"
+    )
+    risk_index_v2: int = Field(
+        ge=0, le=100, description="Risk index of revised version"
+    )
+    risk_index_delta: int = Field(
+        description="Overall risk index change (negative indicates reduced exposure)"
+    )
+    trajectory: str = Field(
+        description="Directional assessment: 'SAFER', 'MORE_RISK', or 'NEUTRAL'"
+    )
     summary_of_changes: list[str] = Field(
         default_factory=list, description="Bullet summary of key material alterations"
     )
-    clause_diffs: list[ClauseDiff] = Field(default_factory=list, description="Granular clause-by-clause diff breakdown")
+    clause_diffs: list[ClauseDiff] = Field(
+        default_factory=list, description="Granular clause-by-clause diff breakdown"
+    )
 
 
 class ContractAnalysisResponse(BaseModel):
     """End-to-end response for a complete contract analysis operation."""
 
-    document_id: str = Field(description="Unique deterministic or random document identifier")
+    document_id: str = Field(
+        description="Unique deterministic or random document identifier"
+    )
     disclaimer: str = Field(description="Mandatory legal disclaimer")
-    anonymization: AnonymizationResult = Field(description="PII sanitization telemetry and redacted text")
-    risk_overview: RiskOverview = Field(description="High-level risk index, breakdown, and executive summary")
+    anonymization: AnonymizationResult = Field(
+        description="PII sanitization telemetry and redacted text"
+    )
+    risk_overview: RiskOverview = Field(
+        description="High-level risk index, breakdown, and executive summary"
+    )
     clauses: list[ClauseAnalysis] = Field(
         default_factory=list, description="Detailed analysis for every segmented clause"
     )
-    attorney_checklist: AttorneyChecklist = Field(description="Structured briefing notes and questions for counsel")
-    analyzed_at: str = Field(description="ISO-8601 UTC timestamp of analysis completion")
+    attorney_checklist: AttorneyChecklist = Field(
+        description="Structured briefing notes and questions for counsel"
+    )
+    analyzed_at: str = Field(
+        description="ISO-8601 UTC timestamp of analysis completion"
+    )
 
 
 # Request Schemas
@@ -216,7 +336,9 @@ class AnalyzeRequest(BaseModel):
     """Request payload for contract risk and semantic analysis."""
 
     text: str = Field(description="Raw contract text to analyze")
-    title: str | None = Field(default=None, description="Optional custom document title")
+    title: str | None = Field(
+        default=None, description="Optional custom document title"
+    )
 
 
 class CompareRequest(BaseModel):
@@ -238,11 +360,15 @@ class ChatRequest(BaseModel):
     """Request payload for the context-aware grounded legal assistant."""
 
     message: str = Field(description="User query regarding contract terms")
-    contract_text: str | None = Field(default="", description="Optional full contract context")
+    contract_text: str | None = Field(
+        default="", description="Optional full contract context"
+    )
     context_clauses: list[dict[str, Any]] | None = Field(
         default=None, description="Optional pre-analyzed clause context"
     )
-    history: list[dict[str, str]] | None = Field(default=None, description="Optional chat conversation history")
+    history: list[dict[str, str]] | None = Field(
+        default=None, description="Optional chat conversation history"
+    )
 
 
 class ChatResponse(BaseModel):
@@ -250,9 +376,15 @@ class ChatResponse(BaseModel):
 
     answer: str = Field(description="Contextual answer explaining contract terms")
     disclaimer: str = Field(description="Mandatory non-advisory legal disclaimer")
-    referenced_clauses: list[str] = Field(default_factory=list, description="Clauses cited or evaluated in answer")
-    risk_warning: str | None = Field(default=None, description="Safety or risk alert if applicable")
-    model_used: str | None = Field(default=None, description="Engine or model identifier utilized")
+    referenced_clauses: list[str] = Field(
+        default_factory=list, description="Clauses cited or evaluated in answer"
+    )
+    risk_warning: str | None = Field(
+        default=None, description="Safety or risk alert if applicable"
+    )
+    model_used: str | None = Field(
+        default=None, description="Engine or model identifier utilized"
+    )
 
 
 class SampleContract(BaseModel):
@@ -269,8 +401,16 @@ class LLMConfigUpdateRequest(BaseModel):
     """Request payload for updating LLM provider settings at runtime."""
 
     api_key: str | None = Field(default=None, description="API key for provider")
-    base_url: str | None = Field(default=None, description="Custom base URL if overriding preset")
+    base_url: str | None = Field(
+        default=None, description="Custom base URL if overriding preset"
+    )
     model_name: str | None = Field(default=None, description="Model identifier")
-    enabled: bool | None = Field(default=None, description="Whether LLM escalation is active")
-    confidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0, description="Escalation threshold")
-    provider: str | None = Field(default=None, description="Provider preset: 'gemini', 'nemotron', 'openai'")
+    enabled: bool | None = Field(
+        default=None, description="Whether LLM escalation is active"
+    )
+    confidence_threshold: float | None = Field(
+        default=None, ge=0.0, le=1.0, description="Escalation threshold"
+    )
+    provider: str | None = Field(
+        default=None, description="Provider preset: 'gemini', 'nemotron', 'openai'"
+    )

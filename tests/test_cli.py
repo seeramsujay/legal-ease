@@ -48,14 +48,18 @@ class TestCLI:
             f.write("1. Term. 1 year agreement.\n2. Payment. Net 30 days.")
             f_path = f.name
 
-        monkeypatch.setattr(sys, "argv", ["legal-ease", "analyze", f_path, "--checklist"])
+        monkeypatch.setattr(
+            sys, "argv", ["legal-ease", "analyze", f_path, "--checklist"]
+        )
         main()
         captured = capsys.readouterr()
         assert "ATTORNEY BRIEFING CHECKLIST:" in captured.out
         assert "NOTICE FOR COUNSEL" in captured.out
 
     def test_cli_analyze_nonexistent_file_exits_1(self, monkeypatch, capsys):
-        monkeypatch.setattr(sys, "argv", ["legal-ease", "analyze", "non_existent_file_12345.txt"])
+        monkeypatch.setattr(
+            sys, "argv", ["legal-ease", "analyze", "non_existent_file_12345.txt"]
+        )
         with pytest.raises(SystemExit) as exc:
             main()
         assert exc.value.code == 1
@@ -81,7 +85,9 @@ class TestCLI:
         assert "Risk Delta:" in captured.out
 
     def test_cli_compare_nonexistent_file_exits_1(self, monkeypatch, capsys):
-        monkeypatch.setattr(sys, "argv", ["legal-ease", "compare", "fake1.txt", "fake2.txt"])
+        monkeypatch.setattr(
+            sys, "argv", ["legal-ease", "compare", "fake1.txt", "fake2.txt"]
+        )
         with pytest.raises(SystemExit) as exc:
             main()
         assert exc.value.code == 1

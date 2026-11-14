@@ -79,15 +79,39 @@ _EUPHEMISM_DEFINITIONS: list[tuple[str, str, float]] = [
         "Unreviewable Discretion",
         0.40,
     ),
-    (r"without\s+necessity\s+of\s+(?:prior\s+notice|cause|demonstrating\s+breach)", "Zero-Notice Deprivation", 0.40),
-    (r"in\s+perpetuity\s+(?:throughout|across)\s+the\s+(?:universe|world)", "Perpetual Rights Extinguishment", 0.50),
+    (
+        r"without\s+necessity\s+of\s+(?:prior\s+notice|cause|demonstrating\s+breach)",
+        "Zero-Notice Deprivation",
+        0.40,
+    ),
+    (
+        r"in\s+perpetuity\s+(?:throughout|across)\s+the\s+(?:universe|world)",
+        "Perpetual Rights Extinguishment",
+        0.50,
+    ),
     (r"conveys?,\s+cedes?,\s+(?:and\s+)?relinquishes?", "Surrender of Rights", 0.40),
     (r"remedies\s+shall\s+be\s+strictly\s+circumscribed", "Masked Liability Cap", 0.35),
     (r"unmitigated\s+and\s+exhaustive\s+accountability", "Uncapped Exposure", 0.45),
-    (r"abstain\s+from\s+(?:rendering|participating\s+in)", "Disguised Non-Compete", 0.40),
-    (r"subjective\s+(?:satisfaction|approval)\s+prior\s+to\s+disbursement", "Conditional Payment Trap", 0.40),
-    (r"irrevocably\s+and\s+unconditionally\s+waives?", "Absolute Rights Forfeiture", 0.45),
-    (r"without\s+recourse\s+to\s+ordinary\s+tribunals", "Court Access Deprivation", 0.40),
+    (
+        r"abstain\s+from\s+(?:rendering|participating\s+in)",
+        "Disguised Non-Compete",
+        0.40,
+    ),
+    (
+        r"subjective\s+(?:satisfaction|approval)\s+prior\s+to\s+disbursement",
+        "Conditional Payment Trap",
+        0.40,
+    ),
+    (
+        r"irrevocably\s+and\s+unconditionally\s+waives?",
+        "Absolute Rights Forfeiture",
+        0.45,
+    ),
+    (
+        r"without\s+recourse\s+to\s+ordinary\s+tribunals",
+        "Court Access Deprivation",
+        0.40,
+    ),
     (
         r"survives?\s+the\s+expiration\s+or\s+earlier\s+termination\s+indefinitely",
         "Indefinite Post-Termination Trap",
@@ -97,7 +121,8 @@ _EUPHEMISM_DEFINITIONS: list[tuple[str, str, float]] = [
 
 # Pre-compiled tuple of (compiled_pattern, label, weight) for maximal search velocity
 COMPILED_EUPHEMISMS: list[tuple[Pattern[str], str, float]] = [
-    (re.compile(pat, re.IGNORECASE), label, weight) for pat, label, weight in _EUPHEMISM_DEFINITIONS
+    (re.compile(pat, re.IGNORECASE), label, weight)
+    for pat, label, weight in _EUPHEMISM_DEFINITIONS
 ]
 
 # Pre-compiled tokenizers and syntactic complexity splitters
@@ -112,22 +137,34 @@ _NESTING_PATTERN = re.compile(
 class SemanticClauseInsight(BaseModel):
     """Linguistic and vector-space telemetry resulting from semantic analysis."""
 
-    is_twisted: bool = Field(default=False, description="Whether twisted or euphemistic drafting was detected")
+    is_twisted: bool = Field(
+        default=False,
+        description="Whether twisted or euphemistic drafting was detected",
+    )
     obfuscation_score: float = Field(
-        default=0.0, description="Obfuscation / complexity index from 0.0 (clear) to 1.0 (heavily disguised)"
+        default=0.0,
+        description="Obfuscation / complexity index from 0.0 (clear) to 1.0 (heavily disguised)",
     )
     archetype_scores: dict[str, float] = Field(
         default_factory=dict, description="Cosine similarity to each trap archetype"
     )
-    top_archetype: str | None = Field(default=None, description="Dominant predatory archetype detected")
-    top_archetype_similarity: float = Field(default=0.0, description="Cosine similarity score of top archetype match")
+    top_archetype: str | None = Field(
+        default=None, description="Dominant predatory archetype detected"
+    )
+    top_archetype_similarity: float = Field(
+        default=0.0, description="Cosine similarity score of top archetype match"
+    )
     detected_euphemisms: list[str] = Field(
-        default_factory=list, description="Specific euphemistic deceptive phrases detected"
+        default_factory=list,
+        description="Specific euphemistic deceptive phrases detected",
     )
     escalation_recommended: bool = Field(
-        default=False, description="Whether complexity and obfuscation mandate LLM escalation"
+        default=False,
+        description="Whether complexity and obfuscation mandate LLM escalation",
     )
-    explanation: str | None = Field(default=None, description="Detailed explanation of the linguistic disguise")
+    explanation: str | None = Field(
+        default=None, description="Detailed explanation of the linguistic disguise"
+    )
 
 
 class SemanticVectorModel:
@@ -184,7 +221,9 @@ class SemanticVectorModel:
 
         return {t: float(c) / norm for t, c in counts.items()}
 
-    def cosine_similarity(self, vec1: dict[str, float], vec2: dict[str, float]) -> float:
+    def cosine_similarity(
+        self, vec1: dict[str, float], vec2: dict[str, float]
+    ) -> float:
         """
         Computes cosine similarity between two L2-normalized sparse vectors.
         Optimized to iterate over the smaller vector for minimal dictionary lookups.
@@ -196,10 +235,14 @@ class SemanticVectorModel:
         if len(vec1) > len(vec2):
             vec1, vec2 = vec2, vec1
 
-        dot_product = sum(weight * vec2.get(token, 0.0) for token, weight in vec1.items())
+        dot_product = sum(
+            weight * vec2.get(token, 0.0) for token, weight in vec1.items()
+        )
         return max(0.0, min(1.0, dot_product))
 
-    def evaluate_semantics(self, text: str | None, section_title: str | None = "") -> SemanticClauseInsight:
+    def evaluate_semantics(
+        self, text: str | None, section_title: str | None = ""
+    ) -> SemanticClauseInsight:
         """
         Evaluates a contract clause for predatory semantics, euphemistic drafting, and obfuscation.
         Returns detailed insight including archetype similarities and escalation flags.
@@ -232,7 +275,9 @@ class SemanticVectorModel:
                 euphemism_weight += weight
 
         # 3. Structural complexity analysis
-        sentences = [s.strip() for s in _SENTENCE_SPLIT_PATTERN.split(safe_text) if s.strip()]
+        sentences = [
+            s.strip() for s in _SENTENCE_SPLIT_PATTERN.split(safe_text) if s.strip()
+        ]
         total_sentences = max(1, len(sentences))
         avg_sentence_len = sum(len(s.split()) for s in sentences) / total_sentences
         has_deep_nesting = bool(_NESTING_PATTERN.search(full_text))
@@ -248,7 +293,11 @@ class SemanticVectorModel:
         # 4. Synthesize Obfuscation Score (0.0 to 1.0)
         # Combines semantic alignment with predatory archetypes (45%),
         # detected euphemisms (35%), and syntactic complexity (20%)
-        raw_obfuscation = (top_sim * 0.45) + (min(1.0, euphemism_weight) * 0.35) + (complexity_factor * 0.20)
+        raw_obfuscation = (
+            (top_sim * 0.45)
+            + (min(1.0, euphemism_weight) * 0.35)
+            + (complexity_factor * 0.20)
+        )
         obfuscation_score = round(max(0.0, min(1.0, raw_obfuscation)), 2)
 
         # 5. Determine if clause is twisted or deceptive
@@ -260,13 +309,21 @@ class SemanticVectorModel:
         )
 
         # 6. LLM escalation recommendation
-        escalation_recommended = is_twisted and (obfuscation_score >= 0.45 or top_sim >= 0.35)
+        escalation_recommended = is_twisted and (
+            obfuscation_score >= 0.45 or top_sim >= 0.35
+        )
 
         explanation: str | None = None
         if is_twisted:
-            archetype_name_clean = top_archetype.replace("_", " ").title() if top_archetype else "Predatory Term"
+            archetype_name_clean = (
+                top_archetype.replace("_", " ").title()
+                if top_archetype
+                else "Predatory Term"
+            )
             euphemism_str = (
-                f" Detected euphemistic drafting: {', '.join(detected_euphemisms)}." if detected_euphemisms else ""
+                f" Detected euphemistic drafting: {', '.join(detected_euphemisms)}."
+                if detected_euphemisms
+                else ""
             )
             explanation = (
                 f"Semantic embedding vectors indicate strong alignment ({int(top_sim * 100)}%) with "

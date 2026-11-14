@@ -55,7 +55,9 @@ def test_mega_linter_workflow_validity():
     assert "jobs" in data
     ml_job = data["jobs"].get("megalinter", {})
     steps = ml_job.get("steps", [])
-    ml_step = next((s for s in steps if "oxsecurity/megalinter" in s.get("uses", "")), None)
+    ml_step = next(
+        (s for s in steps if "oxsecurity/megalinter" in s.get("uses", "")), None
+    )
     assert ml_step is not None, "MegaLinter step not found"
     env = ml_step.get("env", {})
     assert env.get("VALIDATE_ALL_CODE_BASE") is True

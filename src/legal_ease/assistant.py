@@ -92,7 +92,10 @@ class LegalAssistant:
                 if clauses_context:
                     for c in clauses_context:
                         sec_name = c.get("section_title", "")
-                        if sec_name.lower() in llm_answer.lower() or c.get("category", "") in llm_answer.lower():
+                        if (
+                            sec_name.lower() in llm_answer.lower()
+                            or c.get("category", "") in llm_answer.lower()
+                        ):
                             referenced.append(sec_name)
                 return ChatResponse(
                     answer=llm_answer,
@@ -105,7 +108,9 @@ class LegalAssistant:
         # Local deterministic assistant fallback
         return self._answer_locally(safe_query, clauses_context)
 
-    def _answer_locally(self, query: str, clauses_context: list[dict[str, Any]] | None) -> ChatResponse:
+    def _answer_locally(
+        self, query: str, clauses_context: list[dict[str, Any]] | None
+    ) -> ChatResponse:
         """Local rule-based conversational triage when remote LLM is offline."""
         q_lower = query.lower()
         referenced_clauses: list[str] = []
@@ -113,15 +118,21 @@ class LegalAssistant:
         risk_warning: str | None = None
 
         # 1. Check for Termination & Payment on Cancellation
-        if any(w in q_lower for w in ["terminate", "cancel", "kill", "fire", "quit", "leave", "cure"]):
+        if any(
+            w in q_lower
+            for w in ["terminate", "cancel", "kill", "fire", "quit", "leave", "cure"]
+        ):
             if clauses_context:
                 term_clauses = [
                     c
                     for c in clauses_context
-                    if c.get("category") == "termination" or "terminat" in c.get("section_title", "").lower()
+                    if c.get("category") == "termination"
+                    or "terminat" in c.get("section_title", "").lower()
                 ]
                 for c in term_clauses:
-                    referenced_clauses.append(c.get("section_title", "Termination Clause"))
+                    referenced_clauses.append(
+                        c.get("section_title", "Termination Clause")
+                    )
                     findings.append(
                         f"**Regarding Termination ({c.get('section_title')}):** "
                         f"{c.get('plain_english_summary')}\n"
@@ -130,16 +141,34 @@ class LegalAssistant:
                     )
 
         # 2. Check for Lawsuits, Liability, Indemnity & Being Sued
-        if any(w in q_lower for w in ["sue", "sued", "lawsuit", "liable", "liability", "indemn", "damage", "fault"]):
+        if any(
+            w in q_lower
+            for w in [
+                "sue",
+                "sued",
+                "lawsuit",
+                "liable",
+                "liability",
+                "indemn",
+                "damage",
+                "fault",
+            ]
+        ):
             if clauses_context:
                 indem_clauses = [
                     c
                     for c in clauses_context
-                    if c.get("category") in ("indemnification", "limitation_of_liability")
-                    or any(k in c.get("section_title", "").lower() for k in ["indemn", "liabilit"])
+                    if c.get("category")
+                    in ("indemnification", "limitation_of_liability")
+                    or any(
+                        k in c.get("section_title", "").lower()
+                        for k in ["indemn", "liabilit"]
+                    )
                 ]
                 for c in indem_clauses:
-                    referenced_clauses.append(c.get("section_title", "Liability Provision"))
+                    referenced_clauses.append(
+                        c.get("section_title", "Liability Provision")
+                    )
                     findings.append(
                         f"**Regarding Liability & Indemnity ({c.get('section_title')}):** "
                         f"{c.get('plain_english_summary')}\n"
@@ -153,7 +182,16 @@ class LegalAssistant:
         # 3. Check for Intellectual Property, Ownership & Deliverables
         if any(
             w in q_lower
-            for w in ["own", "ownership", "ip", "code", "work for hire", "deliverable", "copyright", "patent"]
+            for w in [
+                "own",
+                "ownership",
+                "ip",
+                "code",
+                "work for hire",
+                "deliverable",
+                "copyright",
+                "patent",
+            ]
         ):
             if clauses_context:
                 ip_clauses = [
@@ -172,15 +210,21 @@ class LegalAssistant:
                     )
 
         # 4. Check for Non-Compete & Restrictive Covenants
-        if any(w in q_lower for w in ["compete", "competition", "non-compete", "restrict", "solicit"]):
+        if any(
+            w in q_lower
+            for w in ["compete", "competition", "non-compete", "restrict", "solicit"]
+        ):
             if clauses_context:
                 nc_clauses = [
                     c
                     for c in clauses_context
-                    if c.get("category") == "restrictive_covenants" or "compete" in c.get("section_title", "").lower()
+                    if c.get("category") == "restrictive_covenants"
+                    or "compete" in c.get("section_title", "").lower()
                 ]
                 for c in nc_clauses:
-                    referenced_clauses.append(c.get("section_title", "Restrictive Covenant"))
+                    referenced_clauses.append(
+                        c.get("section_title", "Restrictive Covenant")
+                    )
                     findings.append(
                         f"**Regarding Restrictive Covenants ({c.get('section_title')}):** "
                         f"{c.get('plain_english_summary')}\n"
@@ -189,12 +233,26 @@ class LegalAssistant:
                     )
 
         # 5. Check for Payment & Fees
-        if any(w in q_lower for w in ["pay", "payment", "money", "rate", "fee", "invoice", "late", "net 30", "net 60"]):
+        if any(
+            w in q_lower
+            for w in [
+                "pay",
+                "payment",
+                "money",
+                "rate",
+                "fee",
+                "invoice",
+                "late",
+                "net 30",
+                "net 60",
+            ]
+        ):
             if clauses_context:
                 pay_clauses = [
                     c
                     for c in clauses_context
-                    if c.get("category") == "payment_terms" or "payment" in c.get("section_title", "").lower()
+                    if c.get("category") == "payment_terms"
+                    or "payment" in c.get("section_title", "").lower()
                 ]
                 for c in pay_clauses:
                     referenced_clauses.append(c.get("section_title", "Payment Terms"))

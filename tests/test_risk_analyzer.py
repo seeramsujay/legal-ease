@@ -72,7 +72,12 @@ def test_document_overview_calculation():
         )
     )
     low_eval = analyzer.evaluate_clause(
-        RawClause(2, "Governing Law", "Governed by the laws of Texas.", ClauseCategory.GOVERNING_LAW)
+        RawClause(
+            2,
+            "Governing Law",
+            "Governed by the laws of Texas.",
+            ClauseCategory.GOVERNING_LAW,
+        )
     )
     overview = analyzer.calculate_overview([high_eval, low_eval])
     assert overview.total_clauses == 2

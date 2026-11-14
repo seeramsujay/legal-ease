@@ -53,7 +53,9 @@ class TestLegalAssistant:
         assert "Liability" in res.answer or "Indemnity" in res.answer
         # High-risk freelance agreement has high indemnity exposure, triggering risk_warning
         assert res.risk_warning is not None
-        assert "CRITICAL" in res.risk_warning or "unilateral" in res.risk_warning.lower()
+        assert (
+            "CRITICAL" in res.risk_warning or "unilateral" in res.risk_warning.lower()
+        )
 
     async def test_ip_ownership_query_local(self):
         res = await self.assistant.answer_query_async(
@@ -68,7 +70,9 @@ class TestLegalAssistant:
             contract_text=FREELANCE_HIGH_RISK,
         )
         assert (
-            "Restrictive Covenants" in res.answer or "Non-Compete" in res.answer or "non-compete" in res.answer.lower()
+            "Restrictive Covenants" in res.answer
+            or "Non-Compete" in res.answer
+            or "non-compete" in res.answer.lower()
         )
 
     async def test_payment_terms_query_local(self):

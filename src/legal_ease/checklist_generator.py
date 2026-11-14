@@ -32,7 +32,9 @@ class AttorneyChecklistGenerator:
         Generate structured attorney questions and Markdown consultation brief.
         Defensively handles None or empty inputs.
         """
-        safe_title = str(document_title).strip() if document_title else "Contract Agreement"
+        safe_title = (
+            str(document_title).strip() if document_title else "Contract Agreement"
+        )
         clause_list = clauses or []
         overview = risk_overview or RiskOverview(
             legal_risk_index=0,
@@ -50,7 +52,11 @@ class AttorneyChecklistGenerator:
         priority_negotiation_items: list[str] = []
 
         # Filter high and critical risk clauses
-        high_risk_clauses = [c for c in clause_list if c.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)]
+        high_risk_clauses = [
+            c
+            for c in clause_list
+            if c.severity in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
+        ]
 
         # 1. Examine High-Risk Clauses for Targeted Attorney Questions
         for clause in high_risk_clauses:
@@ -224,7 +230,11 @@ class AttorneyChecklistGenerator:
             ]
         )
         for idx, q in enumerate(questions, 1):
-            clause_ref = f" *(Originating Clause #{q.related_clause_id})*" if q.related_clause_id else ""
+            clause_ref = (
+                f" *(Originating Clause #{q.related_clause_id})*"
+                if q.related_clause_id
+                else ""
+            )
             md_lines.extend(
                 [
                     f"### {idx}. [{q.category}]{clause_ref}",

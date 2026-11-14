@@ -55,7 +55,11 @@ class TestProblemStatementAlignment:
         assert len(impact) > 10
         assert len(tip) > 10
         # Verify plain-English translation removes jargon
-        assert "protect" in summary.lower() or "pay" in summary.lower() or "cover" in summary.lower()
+        assert (
+            "protect" in summary.lower()
+            or "pay" in summary.lower()
+            or "cover" in summary.lower()
+        )
 
     def test_use_case_2_comparing_contracts_and_policies(self):
         """Use Case 2: Comparing contracts, agreements, or policies."""
@@ -96,7 +100,11 @@ class TestProblemStatementAlignment:
         )
         assert res.status_code == 200
         data = res.json()
-        assert "Intellectual Property" in data["answer"] or "IP" in data["answer"] or "Ownership" in data["answer"]
+        assert (
+            "Intellectual Property" in data["answer"]
+            or "IP" in data["answer"]
+            or "Ownership" in data["answer"]
+        )
         assert len(data["referenced_clauses"]) >= 1
 
     def test_use_case_5_helping_users_understand_options_and_next_steps(self):
@@ -112,7 +120,11 @@ class TestProblemStatementAlignment:
             traps=["Uncapped Liability Disparity"],
         )
         # Verify next steps & counter-proposal guidance
-        assert "cap" in tip.lower() or "negotiate" in tip.lower() or "propose" in tip.lower()
+        assert (
+            "cap" in tip.lower()
+            or "negotiate" in tip.lower()
+            or "propose" in tip.lower()
+        )
         assert len(impact) > 10
 
     def test_use_case_6_generating_summaries_and_actionable_outputs(self):
@@ -124,7 +136,9 @@ class TestProblemStatementAlignment:
         assert report.risk_overview.legal_risk_index > 0
         assert len(report.risk_overview.executive_summary) > 20
         assert report.attorney_checklist is not None
-        assert "Attorney Consultation Brief" in report.attorney_checklist.markdown_report
+        assert (
+            "Attorney Consultation Brief" in report.attorney_checklist.markdown_report
+        )
 
     def test_use_case_7_preparing_info_and_questions_for_legal_pro(self):
         """Use Case 7: Helping users prepare information or questions for a legal professional."""
