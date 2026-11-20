@@ -1,16 +1,22 @@
-# ⚖️ Legal-Ease: Privacy-First AI Legal Navigator & Contract Risk Analyzer
+<div align="center">
 
-[![Tests](https://img.shields.io/badge/tests-157%20passed-success)](https://github.com/seeramsujay/legal-ease)
-[![Super-Linter](https://github.com/seeramsujay/legal-ease/actions/workflows/super-linter.yml/badge.svg)](https://github.com/seeramsujay/legal-ease/actions/workflows/super-linter.yml)
-[![MegaLinter](https://github.com/seeramsujay/legal-ease/actions/workflows/mega-linter.yml/badge.svg)](https://github.com/seeramsujay/legal-ease/actions/workflows/mega-linter.yml)
-[![CodeRabbit](https://img.shields.io/badge/CodeRabbit-Review%20Ready-blue)](https://coderabbit.ai)
-[![Repo Size](https://img.shields.io/badge/repo%20size-%3C%201%20MB%20(limit%2010MB)-blue)](https://github.com/seeramsujay/legal-ease)
-[![Package Manager](https://img.shields.io/badge/package%20managers-uv%20%7C%20pnpm%20only-indigo)](https://github.com/seeramsujay/legal-ease)
-[![Vertical](https://img.shields.io/badge/Hackathon%20Vertical-AI%20for%20Legal%20Assistance%20%26%20Access-orange)](https://github.com/seeramsujay/legal-ease)
-[![Performance](https://img.shields.io/badge/Speed-Cython%20C--Compiled%20(-O3)-cyan)](https://github.com/seeramsujay/legal-ease)
-[![Accessibility](https://img.shields.io/badge/Accessibility-WCAG%202.1%20AAA%2FAA-emerald)](https://github.com/seeramsujay/legal-ease)
-[![AI Engine](https://img.shields.io/badge/AI%20Engine-Gemini%202.0%20Flash--Lite%20%7C%20Nemotron%2070B-purple)](https://github.com/seeramsujay/legal-ease)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<img src="assets/logo.svg" alt="Legal-Ease Logo" width="160" />
+
+# Legal-Ease
+### Plain-Language Legal Contract Summarizer & Predatory Clause Analyzer
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg?logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Accessibility: WCAG AAA](https://img.shields.io/badge/Accessibility-WCAG%20AAA-success.svg)](#)
+
+<p align="center">
+  <b>Transform impenetrable legal jargon into transparent, plain-English executive summaries while identifying predatory liabilities with 100% local PII redaction and Cython acceleration.</b>
+</p>
+
+</div>
+
+---
 
 > **Submission for Hackathon:** *AI for Legal Assistance & Access*  
 > **Repository:** [https://github.com/seeramsujay/legal-ease](https://github.com/seeramsujay/legal-ease)  
